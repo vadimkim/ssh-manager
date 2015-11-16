@@ -2,34 +2,26 @@
 #
 from __future__ import with_statement
 import os
-import operator
 import sys
-import base64
+import operator
 import time
 import tempfile
 import ConfigParser
 import pango
-import pyAES
 import constants as const
 import UiHelper
+from HostUtils import HostUtils
 
 try:
     import gtk
     import gobject
     import pygtk
     import gtk.glade
+
     pygtk.require("2.0")
 
 except:
     print >> sys.stderr, "pygtk 2.0 required"
-    sys.exit(1)
-
-try:
-    import vte
-except:
-    error = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
-                              'You must install libvte for python')
-    error.run()
     sys.exit(1)
 
 # Ver si expect esta instalado
@@ -76,53 +68,122 @@ class conf():
     VERSION = 0
 
 
-## funciones para encryptar passwords - no son muy seguras, pero impiden que los pass se guarden en texto plano
-def xor(pw, str1):
-    c = 0
-    liste = []
-    for k in xrange(len(str1)):
-        if c > len(pw) - 1:
-            c = 0
-        fi = ord(pw[c])
-        c += 1
-        se = ord(str1[k])
-        fin = operator.xor(fi, se)
-        liste += [chr(fin)]
-    return liste
+def loadConfig():
+    global groups
+    groups = {}
+    cp = ConfigParser.RawConfigParser()
+    cp.read(const.CONFIG_FILE)
 
-
-def encrypt_old(passw, string):
+    # Leer configuracion general
     try:
-        ret = xor(passw, string)
-        s = base64.b64encode("".join(ret))
+        conf.WORD_SEPARATORS = cp.get("options", "word-separators")
+        conf.BUFFER_LINES = cp.getint("options", "buffer-lines")
+        conf.CONFIRM_ON_EXIT = cp.getboolean("options", "confirm-exit")
+        conf.FONT_COLOR = cp.get("options", "font-color")
+        conf.BACK_COLOR = cp.get("options", "back-color")
+        conf.TRANSPARENCY = cp.getint("options", "transparency")
+        conf.PASTE_ON_RIGHT_CLICK = cp.getboolean("options", "paste-right-click")
+        conf.CONFIRM_ON_CLOSE_TAB = cp.getboolean("options", "confirm-close-tab")
+        conf.CHECK_UPDATES = cp.getboolean("options", "check-updates")
+        conf.COLLAPSED_FOLDERS = cp.get("window", "collapsed-folders")
+        conf.LEFT_PANEL_WIDTH = cp.getint("window", "left-panel-width")
+        conf.WINDOW_WIDTH = cp.getint("window", "window-width")
+        conf.WINDOW_HEIGHT = cp.getint("window", "window-height")
+        conf.FONT = cp.get("options", "font")
+        conf.HIDE_DONATE = cp.getboolean("options", "donate")
+        conf.AUTO_COPY_SELECTION = cp.getboolean("options", "auto-copy-selection")
+        conf.LOG_PATH = cp.get("options", "log-path")
+        conf.VERSION = cp.get("options", "version")
+        conf.AUTO_CLOSE_TAB = cp.getint("options", "auto-close-tab")
+        conf.SHOW_PANEL = cp.getboolean("window", "show-panel")
+        conf.SHOW_TOOLBAR = cp.getboolean("window", "show-toolbar")
+        conf.STARTUP_LOCAL = cp.getboolean("options", "startup-local")
     except:
-        s = ""
-    return s
+        print "%s: %s" % (const.ERRMSG1, sys.exc_info()[1])
 
-
-def decrypt_old(passw, string):
+    # Leer shorcuts
+    scuts = {}
     try:
-        ret = xor(passw, base64.b64decode(string))
-        s = "".join(ret)
+        scuts[cp.get("shortcuts", "copy")] = const._COPY
     except:
-        s = ""
-    return s
-
-
-def encrypt(passw, string):
+        scuts["CTRL+SHIFT+C"] = const._COPY
     try:
-        s = pyAES.encrypt(string, passw)
+        scuts[cp.get("shortcuts", "paste")] = const._PASTE
     except:
-        s = ""
-    return s
-
-
-def decrypt(passw, string):
+        scuts["CTRL+SHIFT+V"] = const._PASTE
     try:
-        s = decrypt_old(passw, string) if conf.VERSION == 0 else pyAES.decrypt(string, passw)
+        scuts[cp.get("shortcuts", "copy_all")] = const._COPY_ALL
     except:
-        s = ""
-    return s
+        scuts["CTRL+SHIFT+A"] = const._COPY_ALL
+    try:
+        scuts[cp.get("shortcuts", "save")] = const._SAVE
+    except:
+        scuts["CTRL+S"] = const._SAVE
+    try:
+        scuts[cp.get("shortcuts", "find")] = const._FIND
+    except:
+        scuts["CTRL+F"] = const._FIND
+    try:
+        scuts[cp.get("shortcuts", "find_next")] = const._FIND_NEXT
+    except:
+        scuts["F3"] = const._FIND_NEXT
+    try:
+        scuts[cp.get("shortcuts", "find_back")] = const._FIND_BACK
+    except:
+        scuts["SHIFT+F3"] = const._FIND_BACK
+
+    try:
+        scuts[cp.get("shortcuts", "console_previous")] = const._CONSOLE_PREV
+    except:
+        scuts["CTRL+SHIFT+LEFT"] = const._CONSOLE_PREV
+
+    try:
+        scuts[cp.get("shortcuts", "console_next")] = const._CONSOLE_NEXT
+    except:
+        scuts["CTRL+SHIFT+RIGHT"] = const._CONSOLE_NEXT
+
+    try:
+        scuts[cp.get("shortcuts", "console_close")] = const._CONSOLE_CLOSE
+    except:
+        scuts["CTRL+W"] = const._CONSOLE_CLOSE
+
+    try:
+        scuts[cp.get("shortcuts", "console_reconnect")] = const._CONSOLE_RECONNECT
+    except:
+        scuts["CTRL+N"] = const._CONSOLE_RECONNECT
+
+    try:
+        scuts[cp.get("shortcuts", "connect")] = const._CONNECT
+    except:
+        scuts["CTRL+RETURN"] = const._CONNECT
+
+    ##kaman
+    try:
+        scuts[cp.get("shortcuts", "reset")] = const._CLEAR
+    except:
+        scuts["CTRL+K"] = const._CLEAR
+
+    # shortcuts para cambiar consola1-consola9
+    for x in range(1, 10):
+        try:
+            scuts[cp.get("shortcuts", "console_%d" % (x))] = eval("const._CONSOLE_%d" % (x))
+        except:
+            scuts["F%d" % (x)] = eval("_CONSOLE_%d" % (x))
+    try:
+        i = 1
+        while True:
+            scuts[cp.get("shortcuts", "shortcut%d" % (i))] = cp.get("shortcuts", "command%d" % (i)).replace('\\n', '\n')
+            i = i + 1
+    except:
+        pass
+        pass
+    global shortcuts
+    shortcuts = scuts
+
+    # Leer lista de hosts
+    hu = HostUtils()
+    groups = hu.load_hosts(cp, version=conf.VERSION)
+    pass
 
 
 class Wmain():
@@ -132,11 +193,127 @@ class Wmain():
         builder.add_from_file("ssh-manager.ui")
         builder.connect_signals(UiHelper.Handler())
         wMain = builder.get_object("wMain")
+        self.treeServers = builder.get_object("treeServers")
+        self.menuServers = builder.get_object("menuServers")
+        self.initLeftPane()
         wMain.show_all()
         gtk.main()
 
+    def initLeftPane(self):
+        global groups
+
+        self.treeModel = gtk.TreeStore(gobject.TYPE_STRING, gobject.TYPE_PYOBJECT, gtk.gdk.Pixbuf)
+        self.treeServers.set_model(self.treeModel)
+
+        self.treeServers.set_level_indentation(5)
+        # Force the alternating row colors, by default it's off with one column
+        self.treeServers.set_property('rules-hint', True)
+        gtk.rc_parse_string("""
+                style "custom-treestyle"{
+                    GtkTreeView::allow-rules = 1
+                }
+                widget "*treeServers*" style "custom-treestyle"
+            """)
+        column = gtk.TreeViewColumn()
+        column.set_title('Servers')
+        self.treeServers.append_column(column)
+
+        renderer = gtk.CellRendererPixbuf()
+        column.pack_start(renderer, expand=False)
+        column.add_attribute(renderer, 'pixbuf', 2)
+
+        renderer = gtk.CellRendererText()
+        column.pack_start(renderer, expand=True)
+        column.add_attribute(renderer, 'text', 0)
+
+        self.treeServers.set_has_tooltip(True)
+        # self.treeServers.connect('query-tooltip', self.on_treeServers_tooltip)  TODO
+
+        self.updateTree()
+
+    def updateTree(self):
+        for grupo in dict(groups):
+            if len(groups[grupo]) == 0:
+                del groups[grupo]
+
+        if conf.COLLAPSED_FOLDERS == None:
+            conf.COLLAPSED_FOLDERS = ','.join(self.get_collapsed_nodes())
+
+        self.menuServers.foreach(self.menuServers.remove)
+        self.treeModel.clear()
+
+        iconHost = self.treeServers.render_icon("gtk-network", size=gtk.ICON_SIZE_BUTTON, detail=None)
+        iconDir = self.treeServers.render_icon("gtk-directory", size=gtk.ICON_SIZE_BUTTON, detail=None)
+
+        grupos = groups.keys()
+        grupos.sort(lambda x, y: cmp(y, x))
+
+        for grupo in grupos:
+            group = None
+            path = ""
+            menuNode = self.menuServers
+
+            for folder in grupo.split("/"):
+                path = path + '/' + folder
+                row = self.get_folder(self.treeModel, '', path)
+                if row == None:
+                    group = self.treeModel.prepend(group, [folder, None, iconDir])
+                else:
+                    group = row.iter
+
+                menu = self.get_folder_menu(self.menuServers, '', path)
+                if menu == None:
+                    menu = gtk.ImageMenuItem(folder)
+                    # menu.set_image(gtk.image_new_from_stock(gtk.STOCK_DIRECTORY, gtk.ICON_SIZE_MENU))
+                    menuNode.prepend(menu)
+                    menuNode = gtk.Menu()
+                    menu.set_submenu(menuNode)
+                    menu.show()
+                else:
+                    menuNode = menu
+
+            groups[grupo].sort(key=operator.attrgetter('name'))
+            for host in groups[grupo]:
+                self.treeModel.append(group, [host.name, host, iconHost])
+                mnuItem = gtk.ImageMenuItem(host.name)
+                mnuItem.set_image(gtk.image_new_from_stock(gtk.STOCK_NETWORK, gtk.ICON_SIZE_MENU))
+                mnuItem.show()
+                # mnuItem.connect("activate", lambda arg, nb, h: self.addTab(nb, h), self.nbConsole, host)  TODO
+                menuNode.append(mnuItem)
+
+        self.set_collapsed_nodes()
+        conf.COLLAPSED_FOLDERS = None
+
+    def get_folder(self, obj, folder, path):
+        if not obj:
+            return None
+        for row in obj:
+            if path == folder + '/' + row[0]:
+                return row
+            i = self.get_folder(row.iterchildren(), folder + '/' + row[0], path)
+            if i:
+                return i
+
+    def get_folder_menu(self, obj, folder, path):
+        if not obj or not (isinstance(obj, gtk.Menu) or isinstance(obj, gtk.MenuItem)):
+            return None
+        for item in obj.get_children():
+            if path == folder + '/' + item.get_label():
+                return item.get_submenu()
+            i = self.get_folder_menu(item.get_submenu(), folder + '/' + item.get_label(), path)
+            if i:
+                return i
+
+    def set_collapsed_nodes(self):
+        self.treeServers.expand_all()
+        if self.treeModel.get_iter_root():
+            for node in conf.COLLAPSED_FOLDERS.split(","):
+                if node != '':
+                    self.treeServers.collapse_row(node)
+
 
 def main():
+    loadConfig()
     w_main = Wmain()
     w_main.run()
 

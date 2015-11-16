@@ -160,3 +160,7 @@ class Handler:
     def on_wAbout_close(self, *args):
         pass
 
+    def on_menuFileQuit_activate(self, *args):
+        gtk.main_quit(*args)
+
+

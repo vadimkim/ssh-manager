@@ -44,6 +44,7 @@ _CONSOLE_9 = ["console_9"]
 _CONSOLE_CLOSE = ["console_close"]
 _CONSOLE_RECONNECT = ["console_reconnect"]
 _CONNECT = ["connect"]
+ERRMSG1 = "Entrada invalida en archivo de configuracion"
 
 ICON_PATH = BASE_PATH + "/icon.png"
 
