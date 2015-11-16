@@ -32,11 +32,23 @@ def encrypt(passw, string):
     return s
 
 
+def load_encryption_key():
+    try:
+        if os.path.exists(const.KEY_FILE):
+            with open(const.KEY_FILE) as f:
+                password = f.read()
+        else:
+            password = ''
+        return password
+    except IOError:
+        print >> sys.stderr, "Error trying to open key_file"
+
+
 class HostUtils:
     enc_passwd = ''
 
     def __init__(self):
-        self.enc_passwd = self.load_encryption_key()
+        self.enc_passwd = load_encryption_key()
 
     def load_hosts(self, cp, pwd='', version=''):
         groups = {}
@@ -45,7 +57,6 @@ class HostUtils:
         for section in cp.sections():
             if not section.startswith("host "):
                 continue
-            host = cp.options(section)
             try:
                 host = self.load_host_from_ini(cp, section, version=version)
                 if not groups.has_key(host.group):
@@ -55,28 +66,15 @@ class HostUtils:
                 print "%s: %s" % (const.ERRMSG1, sys.exc_info()[1])
         return groups
 
-
-    def load_encryption_key(self):
-        try:
-            if os.path.exists(const.KEY_FILE):
-                with open(const.KEY_FILE) as f:
-                    passwd = f.read()
-            else:
-                passwd = ''
-            return passwd
-        except:
-            print >> sys.stderr, "Error trying to open key_file"
-
-
     def initialise_encyption_key(self):
         import random
         x = int(str(random.random())[2:])
         y = int(str(random.random())[2:])
-        enc_passwd = "%x" % (x * y)
+        self.enc_passwd = "%x" % (x * y)
         try:
             with os.fdopen(os.open(const.KEY_FILE, os.O_WRONLY | os.O_CREAT, 0600), 'w') as f:
-                f.write(enc_passwd)
-        except:
+                f.write(self.enc_passwd)
+        except IOError:
             print >> sys.stderr, "Error initialising key_file"
 
     @staticmethod
@@ -120,9 +118,8 @@ class HostUtils:
                  delete_key)
         return h
 
-    def save_host_to_ini(self, cp, section, host, pwd=''):
-        if pwd == '':
-            pwd = self.get_password()
+    @staticmethod
+    def save_host_to_ini(cp, section, host):
         cp.set(section, "group", host.group)
         cp.set(section, "name", host.name)
         cp.set(section, "description", host.description)
