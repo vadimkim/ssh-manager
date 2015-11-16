@@ -129,7 +129,7 @@ class Wmain():
     def run(self):
         builder = gtk.Builder()
         builder.set_translation_domain(const.domain_name)
-        builder.add_from_file("gnome-connection-manager.ui")
+        builder.add_from_file("ssh-manager.ui")
         builder.connect_signals(UiHelper.Handler())
         wMain = builder.get_object("wMain")
         wMain.show_all()
