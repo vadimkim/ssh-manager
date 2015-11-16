@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 #
-from __future__ import with_statement
+# from __future__ import with_statement
 
 import ConfigParser
+from ConfigParser import NoOptionError
 import operator
 import os
 import sys
-
 import UiHelper
 import constants as const
 from HostUtils import HostUtils
@@ -41,7 +41,7 @@ groups = {}
 shortcuts = {}
 
 
-# Variables de configuracion
+# Configuration variables
 class conf():
     WORD_SEPARATORS = "-A-Za-z0-9,./?%&#:_=+@~"
     BUFFER_LINES = 2000
@@ -72,7 +72,7 @@ def loadConfig():
     cp = ConfigParser.RawConfigParser()
     cp.read(const.CONFIG_FILE)
 
-    # Leer configuracion general
+    # Read general configuration
     try:
         conf.WORD_SEPARATORS = cp.get("options", "word-separators")
         conf.BUFFER_LINES = cp.getint("options", "buffer-lines")
@@ -99,86 +99,78 @@ def loadConfig():
     except:
         print "%s: %s" % (const.ERRMSG1, sys.exc_info()[1])
 
-    # Leer shorcuts
+    # Read shortcuts
     scuts = {}
     try:
-        scuts[cp.get("shortcuts", "copy")] = const._COPY
-    except:
-        scuts["CTRL+SHIFT+C"] = const._COPY
+        scuts[cp.get("shortcuts", "copy")] = const.COPY
+    except NoOptionError:
+        scuts["CTRL+SHIFT+C"] = const.COPY
     try:
-        scuts[cp.get("shortcuts", "paste")] = const._PASTE
-    except:
-        scuts["CTRL+SHIFT+V"] = const._PASTE
+        scuts[cp.get("shortcuts", "paste")] = const.PASTE
+    except NoOptionError:
+        scuts["CTRL+SHIFT+V"] = const.PASTE
     try:
-        scuts[cp.get("shortcuts", "copy_all")] = const._COPY_ALL
-    except:
-        scuts["CTRL+SHIFT+A"] = const._COPY_ALL
+        scuts[cp.get("shortcuts", "copy_all")] = const.COPY_ALL
+    except NoOptionError:
+        scuts["CTRL+SHIFT+A"] = const.COPY_ALL
     try:
-        scuts[cp.get("shortcuts", "save")] = const._SAVE
-    except:
-        scuts["CTRL+S"] = const._SAVE
+        scuts[cp.get("shortcuts", "save")] = const.SAVE
+    except NoOptionError:
+        scuts["CTRL+S"] = const.SAVE
     try:
-        scuts[cp.get("shortcuts", "find")] = const._FIND
-    except:
-        scuts["CTRL+F"] = const._FIND
+        scuts[cp.get("shortcuts", "find")] = const.FIND
+    except NoOptionError:
+        scuts["CTRL+F"] = const.FIND
     try:
-        scuts[cp.get("shortcuts", "find_next")] = const._FIND_NEXT
-    except:
-        scuts["F3"] = const._FIND_NEXT
+        scuts[cp.get("shortcuts", "find_next")] = const.FIND_NEXT
+    except NoOptionError:
+        scuts["F3"] = const.FIND_NEXT
     try:
-        scuts[cp.get("shortcuts", "find_back")] = const._FIND_BACK
-    except:
-        scuts["SHIFT+F3"] = const._FIND_BACK
+        scuts[cp.get("shortcuts", "find_back")] = const.FIND_BACK
+    except NoOptionError:
+        scuts["SHIFT+F3"] = const.FIND_BACK
 
     try:
-        scuts[cp.get("shortcuts", "console_previous")] = const._CONSOLE_PREV
-    except:
-        scuts["CTRL+SHIFT+LEFT"] = const._CONSOLE_PREV
+        scuts[cp.get("shortcuts", "console_previous")] = const.CONSOLE_PREV
+    except NoOptionError:
+        scuts["CTRL+SHIFT+LEFT"] = const.CONSOLE_PREV
 
     try:
-        scuts[cp.get("shortcuts", "console_next")] = const._CONSOLE_NEXT
-    except:
-        scuts["CTRL+SHIFT+RIGHT"] = const._CONSOLE_NEXT
+        scuts[cp.get("shortcuts", "console_next")] = const.CONSOLE_NEXT
+    except NoOptionError:
+        scuts["CTRL+SHIFT+RIGHT"] = const.CONSOLE_NEXT
 
     try:
-        scuts[cp.get("shortcuts", "console_close")] = const._CONSOLE_CLOSE
-    except:
-        scuts["CTRL+W"] = const._CONSOLE_CLOSE
+        scuts[cp.get("shortcuts", "console_close")] = const.CONSOLE_CLOSE
+    except NoOptionError:
+        scuts["CTRL+W"] = const.CONSOLE_CLOSE
 
     try:
-        scuts[cp.get("shortcuts", "console_reconnect")] = const._CONSOLE_RECONNECT
-    except:
-        scuts["CTRL+N"] = const._CONSOLE_RECONNECT
+        scuts[cp.get("shortcuts", "console_reconnect")] = const.CONSOLE_RECONNECT
+    except NoOptionError:
+        scuts["CTRL+N"] = const.CONSOLE_RECONNECT
 
     try:
-        scuts[cp.get("shortcuts", "connect")] = const._CONNECT
-    except:
-        scuts["CTRL+RETURN"] = const._CONNECT
+        scuts[cp.get("shortcuts", "connect")] = const.CONNECT
+    except NoOptionError:
+        scuts["CTRL+RETURN"] = const.CONNECT
 
-    ##kaman
     try:
-        scuts[cp.get("shortcuts", "reset")] = const._CLEAR
-    except:
-        scuts["CTRL+K"] = const._CLEAR
+        scuts[cp.get("shortcuts", "reset")] = const.CLEAR
+    except NoOptionError:
+        scuts["CTRL+K"] = const.CLEAR
 
-    # shortcuts para cambiar consola1-consola9
+    # shortcuts for console1-console9
     for x in range(1, 10):
         try:
-            scuts[cp.get("shortcuts", "console_%d" % (x))] = eval("const._CONSOLE_%d" % (x))
-        except:
-            scuts["F%d" % (x)] = eval("_CONSOLE_%d" % (x))
-    try:
-        i = 1
-        while True:
-            scuts[cp.get("shortcuts", "shortcut%d" % (i))] = cp.get("shortcuts", "command%d" % (i)).replace('\\n', '\n')
-            i += 1
-    except:
-        pass
+            scuts[cp.get("shortcuts", "console_%d" % x)] = eval("const.CONSOLE_%d" % x)
+        except NoOptionError:
+            scuts["F%d" % x] = eval("CONSOLE_%d" % x)
 
     global shortcuts
     shortcuts = scuts
 
-    # Leer lista de hosts
+    # Create hosts list
     hu = HostUtils()
     groups = hu.load_hosts(cp, version=conf.VERSION)
 
@@ -238,7 +230,7 @@ class MainWindow():
             host = list(widget.get_model()[pos[0]])[1]
             if host:
                 text = "<span><b>%s</b>\n%s:%s@%s\n</span><span size='smaller'>%s</span>" % (
-                host.name, host.type, host.user, host.host, host.description)
+                    host.name, host.type, host.user, host.host, host.description)
                 tooltip.set_markup(text)
                 return True
         return False
