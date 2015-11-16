@@ -50,4 +50,3 @@ ICON_PATH = BASE_PATH + "/icon.png"
 
 domain_name = "sshm-lang"
 locale_dir = BASE_PATH + "/lang"
-enc_passwd = ""

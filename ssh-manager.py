@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 #
 from __future__ import with_statement
+
+import ConfigParser
+import operator
 import os
 import sys
-import operator
-import time
-import tempfile
-import ConfigParser
-import pango
-import constants as const
+
 import UiHelper
+import constants as const
 from HostUtils import HostUtils
 
 try:
@@ -70,7 +69,6 @@ class conf():
 
 def loadConfig():
     global groups
-    groups = {}
     cp = ConfigParser.RawConfigParser()
     cp.read(const.CONFIG_FILE)
 
@@ -173,36 +171,39 @@ def loadConfig():
         i = 1
         while True:
             scuts[cp.get("shortcuts", "shortcut%d" % (i))] = cp.get("shortcuts", "command%d" % (i)).replace('\\n', '\n')
-            i = i + 1
+            i += 1
     except:
         pass
-        pass
+
     global shortcuts
     shortcuts = scuts
 
     # Leer lista de hosts
     hu = HostUtils()
     groups = hu.load_hosts(cp, version=conf.VERSION)
-    pass
 
 
-class Wmain():
-    def run(self):
+class MainWindow():
+    def __init__(self):
         builder = gtk.Builder()
         builder.set_translation_domain(const.domain_name)
         builder.add_from_file("ssh-manager.ui")
         builder.connect_signals(UiHelper.Handler())
-        wMain = builder.get_object("wMain")
-        self.treeServers = builder.get_object("treeServers")
         self.menuServers = builder.get_object("menuServers")
+        self.nbConsole = builder.get_object("nbConsole")
+        self.treeModel = gtk.TreeStore(gobject.TYPE_STRING, gobject.TYPE_PYOBJECT, gtk.gdk.Pixbuf)
+        self.treeServers = builder.get_object("treeServers")
+        self.wMain = builder.get_object("wMain")
+
         self.initLeftPane()
-        wMain.show_all()
+
+    def run(self):
+        self.wMain.show_all()
         gtk.main()
 
     def initLeftPane(self):
         global groups
 
-        self.treeModel = gtk.TreeStore(gobject.TYPE_STRING, gobject.TYPE_PYOBJECT, gtk.gdk.Pixbuf)
         self.treeServers.set_model(self.treeModel)
 
         self.treeServers.set_level_indentation(5)
@@ -227,16 +228,27 @@ class Wmain():
         column.add_attribute(renderer, 'text', 0)
 
         self.treeServers.set_has_tooltip(True)
-        # self.treeServers.connect('query-tooltip', self.on_treeServers_tooltip)  TODO
-
+        self.treeServers.connect('query-tooltip', self.on_treeServers_tooltip)
         self.updateTree()
 
-    def updateTree(self):
-        for grupo in dict(groups):
-            if len(groups[grupo]) == 0:
-                del groups[grupo]
+    def on_treeServers_tooltip(self, widget, x, y, keyboard, tooltip):
+        x, y = widget.convert_widget_to_bin_window_coords(x, y)
+        pos = widget.get_path_at_pos(x, y)
+        if pos:
+            host = list(widget.get_model()[pos[0]])[1]
+            if host:
+                text = "<span><b>%s</b>\n%s:%s@%s\n</span><span size='smaller'>%s</span>" % (
+                host.name, host.type, host.user, host.host, host.description)
+                tooltip.set_markup(text)
+                return True
+        return False
 
-        if conf.COLLAPSED_FOLDERS == None:
+    def updateTree(self):
+        for group in dict(groups):
+            if len(groups[group]) == 0:
+                del groups[group]
+
+        if conf.COLLAPSED_FOLDERS is None:
             conf.COLLAPSED_FOLDERS = ','.join(self.get_collapsed_nodes())
 
         self.menuServers.foreach(self.menuServers.remove)
@@ -245,15 +257,15 @@ class Wmain():
         iconHost = self.treeServers.render_icon("gtk-network", size=gtk.ICON_SIZE_BUTTON, detail=None)
         iconDir = self.treeServers.render_icon("gtk-directory", size=gtk.ICON_SIZE_BUTTON, detail=None)
 
-        grupos = groups.keys()
-        grupos.sort(lambda x, y: cmp(y, x))
+        groupKeys = groups.keys()
+        groupKeys.sort(lambda x, y: cmp(y, x))
 
-        for grupo in grupos:
+        for key in groupKeys:
             group = None
             path = ""
             menuNode = self.menuServers
 
-            for folder in grupo.split("/"):
+            for folder in key.split("/"):
                 path = path + '/' + folder
                 row = self.get_folder(self.treeModel, '', path)
                 if row == None:
@@ -262,7 +274,7 @@ class Wmain():
                     group = row.iter
 
                 menu = self.get_folder_menu(self.menuServers, '', path)
-                if menu == None:
+                if menu is None:
                     menu = gtk.ImageMenuItem(folder)
                     # menu.set_image(gtk.image_new_from_stock(gtk.STOCK_DIRECTORY, gtk.ICON_SIZE_MENU))
                     menuNode.prepend(menu)
@@ -272,13 +284,13 @@ class Wmain():
                 else:
                     menuNode = menu
 
-            groups[grupo].sort(key=operator.attrgetter('name'))
-            for host in groups[grupo]:
+            groups[key].sort(key=operator.attrgetter('name'))
+            for host in groups[key]:
                 self.treeModel.append(group, [host.name, host, iconHost])
                 mnuItem = gtk.ImageMenuItem(host.name)
                 mnuItem.set_image(gtk.image_new_from_stock(gtk.STOCK_NETWORK, gtk.ICON_SIZE_MENU))
                 mnuItem.show()
-                # mnuItem.connect("activate", lambda arg, nb, h: self.addTab(nb, h), self.nbConsole, host)  TODO
+                # mnuItem.connect("activate", lambda arg, nb, h: self.addTab(nb, h), self.nbConsole, host) TODO
                 menuNode.append(mnuItem)
 
         self.set_collapsed_nodes()
@@ -314,7 +326,7 @@ class Wmain():
 
 def main():
     loadConfig()
-    w_main = Wmain()
+    w_main = MainWindow()
     w_main.run()
 
 
