@@ -1,5 +1,6 @@
 import os
 import gtk
+import gobject
 
 
 def bindtextdomain(app_name, locale_dir=None):
@@ -34,6 +35,10 @@ def bindtextdomain(app_name, locale_dir=None):
 
 
 class Handler:
+
+    def __init__(self, window):
+        self.main = window
+
     def on_wMain_destroy(self, *args):
         gtk.main_quit(*args)
 
@@ -163,4 +168,9 @@ class Handler:
     def on_menuFileQuit_activate(self, *args):
         gtk.main_quit(*args)
 
+    def on_showToolbar_toggled(self, widget, *args):
+        self.main.set_toolbar_visible(widget.get_active())
+
+    def on_showPanel_toggled (self, widget, *args):
+        self.main.set_panel_visible(widget.get_active())
 

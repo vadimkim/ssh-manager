@@ -2,14 +2,12 @@
 #
 # from __future__ import with_statement
 
-import ConfigParser
-from ConfigParser import NoOptionError
 import operator
 import os
 import sys
 import UiHelper
+from Configuration import Conf
 import constants as const
-from HostUtils import HostUtils
 
 try:
     import gtk
@@ -23,182 +21,52 @@ except:
     print >> sys.stderr, "pygtk 2.0 required"
     sys.exit(1)
 
-# Ver si expect esta instalado
+# check if @expect is installed
 try:
     e = os.system("expect >/dev/null 2>&1 -v")
-except:
-    e = -1
-if e != 0:
-    error = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, 'You must install expect', gtk.BUTTONS_OK)
-    error.run()
+except OSError:
+    print >> sys.stderr, 'You must install expect'
     sys.exit(1)
 
 gtk.gdk.threads_init()
-
 UiHelper.bindtextdomain(const.domain_name, const.locale_dir)
-
-groups = {}
-shortcuts = {}
-
-
-# Configuration variables
-class conf():
-    WORD_SEPARATORS = "-A-Za-z0-9,./?%&#:_=+@~"
-    BUFFER_LINES = 2000
-    STARTUP_LOCAL = True
-    CONFIRM_ON_EXIT = True
-    FONT_COLOR = ""
-    BACK_COLOR = ""
-    TRANSPARENCY = 0
-    PASTE_ON_RIGHT_CLICK = 1
-    CONFIRM_ON_CLOSE_TAB = 0
-    AUTO_CLOSE_TAB = 0
-    COLLAPSED_FOLDERS = ""
-    LEFT_PANEL_WIDTH = 100
-    CHECK_UPDATES = True
-    WINDOW_WIDTH = -1
-    WINDOW_HEIGHT = -1
-    FONT = ""
-    HIDE_DONATE = False
-    AUTO_COPY_SELECTION = 0
-    LOG_PATH = os.path.expanduser("~")
-    SHOW_TOOLBAR = True
-    SHOW_PANEL = True
-    VERSION = 0
-
-
-def loadConfig():
-    global groups
-    cp = ConfigParser.RawConfigParser()
-    cp.read(const.CONFIG_FILE)
-
-    # Read general configuration
-    try:
-        conf.WORD_SEPARATORS = cp.get("options", "word-separators")
-        conf.BUFFER_LINES = cp.getint("options", "buffer-lines")
-        conf.CONFIRM_ON_EXIT = cp.getboolean("options", "confirm-exit")
-        conf.FONT_COLOR = cp.get("options", "font-color")
-        conf.BACK_COLOR = cp.get("options", "back-color")
-        conf.TRANSPARENCY = cp.getint("options", "transparency")
-        conf.PASTE_ON_RIGHT_CLICK = cp.getboolean("options", "paste-right-click")
-        conf.CONFIRM_ON_CLOSE_TAB = cp.getboolean("options", "confirm-close-tab")
-        conf.CHECK_UPDATES = cp.getboolean("options", "check-updates")
-        conf.COLLAPSED_FOLDERS = cp.get("window", "collapsed-folders")
-        conf.LEFT_PANEL_WIDTH = cp.getint("window", "left-panel-width")
-        conf.WINDOW_WIDTH = cp.getint("window", "window-width")
-        conf.WINDOW_HEIGHT = cp.getint("window", "window-height")
-        conf.FONT = cp.get("options", "font")
-        conf.HIDE_DONATE = cp.getboolean("options", "donate")
-        conf.AUTO_COPY_SELECTION = cp.getboolean("options", "auto-copy-selection")
-        conf.LOG_PATH = cp.get("options", "log-path")
-        conf.VERSION = cp.get("options", "version")
-        conf.AUTO_CLOSE_TAB = cp.getint("options", "auto-close-tab")
-        conf.SHOW_PANEL = cp.getboolean("window", "show-panel")
-        conf.SHOW_TOOLBAR = cp.getboolean("window", "show-toolbar")
-        conf.STARTUP_LOCAL = cp.getboolean("options", "startup-local")
-    except:
-        print "%s: %s" % (const.ERRMSG1, sys.exc_info()[1])
-
-    # Read shortcuts
-    scuts = {}
-    try:
-        scuts[cp.get("shortcuts", "copy")] = const.COPY
-    except NoOptionError:
-        scuts["CTRL+SHIFT+C"] = const.COPY
-    try:
-        scuts[cp.get("shortcuts", "paste")] = const.PASTE
-    except NoOptionError:
-        scuts["CTRL+SHIFT+V"] = const.PASTE
-    try:
-        scuts[cp.get("shortcuts", "copy_all")] = const.COPY_ALL
-    except NoOptionError:
-        scuts["CTRL+SHIFT+A"] = const.COPY_ALL
-    try:
-        scuts[cp.get("shortcuts", "save")] = const.SAVE
-    except NoOptionError:
-        scuts["CTRL+S"] = const.SAVE
-    try:
-        scuts[cp.get("shortcuts", "find")] = const.FIND
-    except NoOptionError:
-        scuts["CTRL+F"] = const.FIND
-    try:
-        scuts[cp.get("shortcuts", "find_next")] = const.FIND_NEXT
-    except NoOptionError:
-        scuts["F3"] = const.FIND_NEXT
-    try:
-        scuts[cp.get("shortcuts", "find_back")] = const.FIND_BACK
-    except NoOptionError:
-        scuts["SHIFT+F3"] = const.FIND_BACK
-
-    try:
-        scuts[cp.get("shortcuts", "console_previous")] = const.CONSOLE_PREV
-    except NoOptionError:
-        scuts["CTRL+SHIFT+LEFT"] = const.CONSOLE_PREV
-
-    try:
-        scuts[cp.get("shortcuts", "console_next")] = const.CONSOLE_NEXT
-    except NoOptionError:
-        scuts["CTRL+SHIFT+RIGHT"] = const.CONSOLE_NEXT
-
-    try:
-        scuts[cp.get("shortcuts", "console_close")] = const.CONSOLE_CLOSE
-    except NoOptionError:
-        scuts["CTRL+W"] = const.CONSOLE_CLOSE
-
-    try:
-        scuts[cp.get("shortcuts", "console_reconnect")] = const.CONSOLE_RECONNECT
-    except NoOptionError:
-        scuts["CTRL+N"] = const.CONSOLE_RECONNECT
-
-    try:
-        scuts[cp.get("shortcuts", "connect")] = const.CONNECT
-    except NoOptionError:
-        scuts["CTRL+RETURN"] = const.CONNECT
-
-    try:
-        scuts[cp.get("shortcuts", "reset")] = const.CLEAR
-    except NoOptionError:
-        scuts["CTRL+K"] = const.CLEAR
-
-    # shortcuts for console1-console9
-    for x in range(1, 10):
-        try:
-            scuts[cp.get("shortcuts", "console_%d" % x)] = eval("const.CONSOLE_%d" % x)
-        except NoOptionError:
-            scuts["F%d" % x] = eval("CONSOLE_%d" % x)
-
-    global shortcuts
-    shortcuts = scuts
-
-    # Create hosts list
-    hu = HostUtils()
-    groups = hu.load_hosts(cp, version=conf.VERSION)
-
 
 class MainWindow():
     def __init__(self):
+        self.conf = Conf()
         builder = gtk.Builder()
         builder.set_translation_domain(const.domain_name)
         builder.add_from_file("ssh-manager.ui")
-        builder.connect_signals(UiHelper.Handler())
+        builder.connect_signals(UiHelper.Handler(self))
         self.menuServers = builder.get_object("menuServers")
         self.nbConsole = builder.get_object("nbConsole")
         self.treeModel = gtk.TreeStore(gobject.TYPE_STRING, gobject.TYPE_PYOBJECT, gtk.gdk.Pixbuf)
         self.treeServers = builder.get_object("treeServers")
         self.wMain = builder.get_object("wMain")
-
-        self.initLeftPane()
+        self.hpMain = builder.get_object("hpMain")
+        self.builder = builder
 
     def run(self):
+        if self.conf.WINDOW_WIDTH != -1 and self.conf.WINDOW_HEIGHT != -1:
+            self.wMain.resize(self.conf.WINDOW_WIDTH, self.conf.WINDOW_HEIGHT)
+        else:
+            self.wMain.maximize()
+
+        if self.conf.LEFT_PANEL_WIDTH != 0:
+            self.hpMain.previous_position = self.conf.LEFT_PANEL_WIDTH
+            self.set_panel_visible(self.conf.SHOW_PANEL)
+
+        self.set_toolbar_visible(self.conf.SHOW_TOOLBAR)
+
+        self.initLeftPane()
         self.wMain.show_all()
         gtk.main()
 
     def initLeftPane(self):
-        global groups
 
         self.treeServers.set_model(self.treeModel)
-
         self.treeServers.set_level_indentation(5)
+
         # Force the alternating row colors, by default it's off with one column
         self.treeServers.set_property('rules-hint', True)
         gtk.rc_parse_string("""
@@ -236,12 +104,12 @@ class MainWindow():
         return False
 
     def updateTree(self):
-        for group in dict(groups):
-            if len(groups[group]) == 0:
-                del groups[group]
+        for group in dict(self.conf.groups):
+            if len(self.conf.groups[group]) == 0:
+                del self.conf.groups[group]
 
-        if conf.COLLAPSED_FOLDERS is None:
-            conf.COLLAPSED_FOLDERS = ','.join(self.get_collapsed_nodes())
+        if self.conf.COLLAPSED_FOLDERS is None:
+            self.conf.COLLAPSED_FOLDERS = ','.join(self.get_collapsed_nodes())
 
         self.menuServers.foreach(self.menuServers.remove)
         self.treeModel.clear()
@@ -249,7 +117,7 @@ class MainWindow():
         iconHost = self.treeServers.render_icon("gtk-network", size=gtk.ICON_SIZE_BUTTON, detail=None)
         iconDir = self.treeServers.render_icon("gtk-directory", size=gtk.ICON_SIZE_BUTTON, detail=None)
 
-        groupKeys = groups.keys()
+        groupKeys = self.conf.groups.keys()
         groupKeys.sort(lambda x, y: cmp(y, x))
 
         for key in groupKeys:
@@ -276,8 +144,8 @@ class MainWindow():
                 else:
                     menuNode = menu
 
-            groups[key].sort(key=operator.attrgetter('name'))
-            for host in groups[key]:
+            self.conf.groups[key].sort(key=operator.attrgetter('name'))
+            for host in self.conf.groups[key]:
                 self.treeModel.append(group, [host.name, host, iconHost])
                 mnuItem = gtk.ImageMenuItem(host.name)
                 mnuItem.set_image(gtk.image_new_from_stock(gtk.STOCK_NETWORK, gtk.ICON_SIZE_MENU))
@@ -286,7 +154,7 @@ class MainWindow():
                 menuNode.append(mnuItem)
 
         self.set_collapsed_nodes()
-        conf.COLLAPSED_FOLDERS = None
+        self.conf.COLLAPSED_FOLDERS = None
 
     def get_folder(self, obj, folder, path):
         if not obj:
@@ -311,13 +179,36 @@ class MainWindow():
     def set_collapsed_nodes(self):
         self.treeServers.expand_all()
         if self.treeModel.get_iter_root():
-            for node in conf.COLLAPSED_FOLDERS.split(","):
+            for node in self.conf.COLLAPSED_FOLDERS.split(","):
                 if node != '':
                     self.treeServers.collapse_row(node)
 
+    def set_panel_visible(self, visibility):
+        if visibility:
+            gobject.timeout_add(200, lambda: self.hpMain.set_position(
+                self.hpMain.previous_position if self.hpMain.previous_position > 10 else 150))
+        else:
+            self.hpMain.previous_position = self.hpMain.get_position()
+            gobject.timeout_add(200, lambda: self.hpMain.set_position(0))
+        self.builder.get_object("showPanel").set_active(visibility)
+        self.conf.SHOW_PANEL = visibility
+
+    def set_toolbar_visible(self, visibility):
+        if visibility:
+            self.builder.get_object("toolbar1").show()
+            self.builder.get_object("showToolbar").set_active(visibility)
+        else:
+            self.builder.get_object("toolbar1").hide()
+            self.builder.get_object("showToolbar").set_active(visibility)
+            self.conf.SHOW_TOOLBAR = visibility
+
+    def get_collapsed_nodes(self):
+        nodes=[]
+        self.treeModel.foreach(self.is_node_collapsed, nodes)
+        return nodes
+
 
 def main():
-    loadConfig()
     w_main = MainWindow()
     w_main.run()
 
