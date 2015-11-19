@@ -31,6 +31,7 @@ except OSError:
 gtk.gdk.threads_init()
 UiHelper.bindtextdomain(const.domain_name, const.locale_dir)
 
+
 class MainWindow():
     def __init__(self):
         self.conf = Conf()
@@ -58,11 +59,11 @@ class MainWindow():
 
         self.set_toolbar_visible(self.conf.SHOW_TOOLBAR)
 
-        self.initLeftPane()
+        self.init_left_pane()
         self.wMain.show_all()
         gtk.main()
 
-    def initLeftPane(self):
+    def init_left_pane(self):
 
         self.treeServers.set_model(self.treeModel)
         self.treeServers.set_level_indentation(5)
@@ -88,10 +89,11 @@ class MainWindow():
         column.add_attribute(renderer, 'text', 0)
 
         self.treeServers.set_has_tooltip(True)
-        self.treeServers.connect('query-tooltip', self.on_treeServers_tooltip)
-        self.updateTree()
+        self.treeServers.connect('query-tooltip', self.on_tree_servers_tooltip)
+        self.update_tree()
 
-    def on_treeServers_tooltip(self, widget, x, y, keyboard, tooltip):
+    @staticmethod
+    def on_tree_servers_tooltip(widget, x, y, keyboard, tooltip):
         x, y = widget.convert_widget_to_bin_window_coords(x, y)
         pos = widget.get_path_at_pos(x, y)
         if pos:
@@ -103,33 +105,30 @@ class MainWindow():
                 return True
         return False
 
-    def updateTree(self):
+    def update_tree(self):
         for group in dict(self.conf.groups):
             if len(self.conf.groups[group]) == 0:
                 del self.conf.groups[group]
 
-        if self.conf.COLLAPSED_FOLDERS is None:
-            self.conf.COLLAPSED_FOLDERS = ','.join(self.get_collapsed_nodes())
-
         self.menuServers.foreach(self.menuServers.remove)
         self.treeModel.clear()
 
-        iconHost = self.treeServers.render_icon("gtk-network", size=gtk.ICON_SIZE_BUTTON, detail=None)
-        iconDir = self.treeServers.render_icon("gtk-directory", size=gtk.ICON_SIZE_BUTTON, detail=None)
+        icon_host = self.treeServers.render_icon("gtk-network", size=gtk.ICON_SIZE_BUTTON, detail=None)
+        icon_dir = self.treeServers.render_icon("gtk-directory", size=gtk.ICON_SIZE_BUTTON, detail=None)
 
-        groupKeys = self.conf.groups.keys()
-        groupKeys.sort(lambda x, y: cmp(y, x))
+        group_keys = self.conf.groups.keys()
+        group_keys.sort(lambda x, y: cmp(y, x))
 
-        for key in groupKeys:
+        for key in group_keys:
             group = None
             path = ""
-            menuNode = self.menuServers
+            menu_node = self.menuServers
 
             for folder in key.split("/"):
                 path = path + '/' + folder
                 row = self.get_folder(self.treeModel, '', path)
-                if row == None:
-                    group = self.treeModel.prepend(group, [folder, None, iconDir])
+                if row is None:
+                    group = self.treeModel.prepend(group, [folder, None, icon_dir])
                 else:
                     group = row.iter
 
@@ -137,24 +136,23 @@ class MainWindow():
                 if menu is None:
                     menu = gtk.ImageMenuItem(folder)
                     # menu.set_image(gtk.image_new_from_stock(gtk.STOCK_DIRECTORY, gtk.ICON_SIZE_MENU))
-                    menuNode.prepend(menu)
-                    menuNode = gtk.Menu()
-                    menu.set_submenu(menuNode)
+                    menu_node.prepend(menu)
+                    menu_node = gtk.Menu()
+                    menu.set_submenu(menu_node)
                     menu.show()
                 else:
-                    menuNode = menu
+                    menu_node = menu
 
             self.conf.groups[key].sort(key=operator.attrgetter('name'))
             for host in self.conf.groups[key]:
-                self.treeModel.append(group, [host.name, host, iconHost])
-                mnuItem = gtk.ImageMenuItem(host.name)
-                mnuItem.set_image(gtk.image_new_from_stock(gtk.STOCK_NETWORK, gtk.ICON_SIZE_MENU))
-                mnuItem.show()
+                self.treeModel.append(group, [host.name, host, icon_host])
+                menu_item = gtk.ImageMenuItem(host.name)
+                menu_item.set_image(gtk.image_new_from_stock(gtk.STOCK_NETWORK, gtk.ICON_SIZE_MENU))
+                menu_item.show()
                 # mnuItem.connect("activate", lambda arg, nb, h: self.addTab(nb, h), self.nbConsole, host) TODO
-                menuNode.append(mnuItem)
+                menu_node.append(menu_item)
 
         self.set_collapsed_nodes()
-        self.conf.COLLAPSED_FOLDERS = None
 
     def get_folder(self, obj, folder, path):
         if not obj:
@@ -201,11 +199,6 @@ class MainWindow():
             self.builder.get_object("toolbar1").hide()
             self.builder.get_object("showToolbar").set_active(visibility)
             self.conf.SHOW_TOOLBAR = visibility
-
-    def get_collapsed_nodes(self):
-        nodes=[]
-        self.treeModel.foreach(self.is_node_collapsed, nodes)
-        return nodes
 
 
 def main():
