@@ -75,8 +75,31 @@ class Handler:
     def on_double_click(self, *args):
         pass
 
-    def on_tvServers_button_press_event(self, *args):
-        pass
+    def on_tvServers_button_press_event(self, widget, event, *args):
+        if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
+            x = int(event.x)
+            y = int(event.y)
+            pthinfo = self.main.treeServers.get_path_at_pos(x, y)
+            if pthinfo is None:
+                self.main.popupMenuFolder.mnuDel.hide()
+                self.main.popupMenuFolder.mnuEdit.hide()
+                self.main.popupMenuFolder.mnuCopyAddress.hide()
+                self.main.popupMenuFolder.mnuDup.hide()
+            else:
+                path, col, cellx, celly = pthinfo
+                if self.main.treeModel.iter_children(self.main.treeModel.get_iter(path)):
+                    self.main.popupMenuFolder.mnuEdit.hide()
+                    self.main.popupMenuFolder.mnuCopyAddress.hide()
+                    self.main.popupMenuFolder.mnuDup.hide()
+                else:
+                    self.main.popupMenuFolder.mnuEdit.show()
+                    self.main.popupMenuFolder.mnuCopyAddress.show()
+                    self.main.popupMenuFolder.mnuDup.show()
+                self.main.popupMenuFolder.mnuDel.show()
+                self.main.treeServers.grab_focus()
+                self.main.treeServers.set_cursor( path, col, 0)
+            self.main.popupMenuFolder.popup( None, None, None, event.button, event.time)
+            return True
 
     def on_tvServers_row_activated(self, widget, *args):
         if not self.main.treeModel.iter_has_child(widget.get_selection().get_selected()[1]):

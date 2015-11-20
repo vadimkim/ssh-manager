@@ -65,6 +65,7 @@ class MainWindow:
         self.popupMenuTab = gtk.Menu()
         self.builder = builder
 
+    # TODO check ancestor. This is probably wrong class
     def init(self, group, host=None):
         self.cmbGroup.get_child().set_text(group)
         if host == None:
@@ -197,37 +198,37 @@ class MainWindow:
         self.popupMenu.mnuCopy = menuItem = gtk.ImageMenuItem(_("Copiar"))
         menuItem.set_image(gtk.image_new_from_stock(gtk.STOCK_COPY, gtk.ICON_SIZE_MENU))
         self.popupMenu.append(menuItem)
-        menuItem.connect("activate", self.on_popupmenu, 'C')
+        menuItem.connect("activate", self.on_popup_menu, 'C')
         menuItem.show()
 
         self.popupMenu.mnuPaste = menuItem = gtk.ImageMenuItem(_("Pegar"))
         menuItem.set_image(gtk.image_new_from_stock(gtk.STOCK_PASTE, gtk.ICON_SIZE_MENU))
         self.popupMenu.append(menuItem)
-        menuItem.connect("activate", self.on_popupmenu, 'V')
+        menuItem.connect("activate", self.on_popup_menu, 'V')
         menuItem.show()
 
         self.popupMenu.mnuCopyPaste = menuItem = gtk.ImageMenuItem(_("Copiar y Pegar"))
         menuItem.set_image(gtk.image_new_from_stock(gtk.STOCK_INDEX, gtk.ICON_SIZE_MENU))
         self.popupMenu.append(menuItem)
-        menuItem.connect("activate", self.on_popupmenu, 'CV')
+        menuItem.connect("activate", self.on_popup_menu, 'CV')
         menuItem.show()
 
         self.popupMenu.mnuSelect = menuItem = gtk.ImageMenuItem(_("Seleccionar todo"))
         menuItem.set_image(gtk.image_new_from_stock(gtk.STOCK_SELECT_ALL, gtk.ICON_SIZE_MENU))
         self.popupMenu.append(menuItem)
-        menuItem.connect("activate", self.on_popupmenu, 'A')
+        menuItem.connect("activate", self.on_popup_menu, 'A')
         menuItem.show()
 
         self.popupMenu.mnuCopyAll = menuItem = gtk.ImageMenuItem(_("Copiar todo"))
         menuItem.set_image(gtk.image_new_from_stock(gtk.STOCK_SELECT_ALL, gtk.ICON_SIZE_MENU))
         self.popupMenu.append(menuItem)
-        menuItem.connect("activate", self.on_popupmenu, 'CA')
+        menuItem.connect("activate", self.on_popup_menu, 'CA')
         menuItem.show()
 
         self.popupMenu.mnuSelect = menuItem = gtk.ImageMenuItem(_("Guardar buffer en archivo"))
         menuItem.set_image(gtk.image_new_from_stock(gtk.STOCK_SAVE, gtk.ICON_SIZE_MENU))
         self.popupMenu.append(menuItem)
-        menuItem.connect("activate", self.on_popupmenu, 'S')
+        menuItem.connect("activate", self.on_popup_menu, 'S')
         menuItem.show()
 
         menuItem = gtk.MenuItem()
@@ -237,30 +238,30 @@ class MainWindow:
         self.popupMenu.mnuReset = menuItem = gtk.ImageMenuItem(_("Reiniciar consola"))
         menuItem.set_image(gtk.image_new_from_stock(gtk.STOCK_NEW, gtk.ICON_SIZE_MENU))
         self.popupMenu.append(menuItem)
-        menuItem.connect("activate", self.on_popupmenu, 'RS2')
+        menuItem.connect("activate", self.on_popup_menu, 'RS2')
         menuItem.show()
 
         self.popupMenu.mnuClear = menuItem = gtk.ImageMenuItem(_("Reiniciar y Limpiar consola"))
         menuItem.set_image(gtk.image_new_from_stock(gtk.STOCK_CLEAR, gtk.ICON_SIZE_MENU))
         self.popupMenu.append(menuItem)
-        menuItem.connect("activate", self.on_popupmenu, 'RC2')
+        menuItem.connect("activate", self.on_popup_menu, 'RC2')
         menuItem.show()
 
         self.popupMenu.mnuClone = menuItem = gtk.ImageMenuItem(_("Clonar consola"))
         menuItem.set_image(gtk.image_new_from_stock(gtk.STOCK_COPY, gtk.ICON_SIZE_MENU))
         self.popupMenu.append(menuItem)
-        menuItem.connect("activate", self.on_popupmenu, 'CC2')
+        menuItem.connect("activate", self.on_popup_menu, 'CC2')
         menuItem.show()
 
         self.popupMenu.mnuLog = menuItem = gtk.CheckMenuItem(_("Habilitar log"))
         self.popupMenu.append(menuItem)
-        menuItem.connect("activate", self.on_popupmenu, 'L2')
+        menuItem.connect("activate", self.on_popup_menu, 'L2')
         menuItem.show()
 
         self.popupMenu.mnuClose = menuItem = gtk.ImageMenuItem(_("Cerrar consola"))
         menuItem.set_image(gtk.image_new_from_stock(gtk.STOCK_CLOSE, gtk.ICON_SIZE_MENU))
         self.popupMenu.append(menuItem)
-        menuItem.connect("activate", self.on_popupmenu, 'X')
+        menuItem.connect("activate", self.on_popup_menu, 'X')
         menuItem.show()
 
         menuItem = gtk.MenuItem()
@@ -274,7 +275,7 @@ class MainWindow:
         menuItem.set_submenu(self.popupMenu.mnuCommands)
         self.popupMenu.append(menuItem)
         menuItem.show()
-        self.populateCommandsMenu()
+        self.populate_commands_menu()
 
         # Menu contextual para panel de servidores
         self.popupMenuFolder = gtk.Menu()
@@ -287,7 +288,7 @@ class MainWindow:
         self.popupMenuFolder.mnuCopyAddress = menuItem = gtk.ImageMenuItem(_("Copiar Direccion"))
         menuItem.set_image(gtk.image_new_from_stock(gtk.STOCK_COPY, gtk.ICON_SIZE_MENU))
         self.popupMenuFolder.append(menuItem)
-        menuItem.connect("activate", self.on_popupmenu, 'H')
+        menuItem.connect("activate", self.on_popup_menu, 'H')
         menuItem.show()
 
         self.popupMenuFolder.mnuAdd = menuItem = gtk.ImageMenuItem(_("Agregar Host"))
@@ -308,7 +309,7 @@ class MainWindow:
         self.popupMenuFolder.mnuDup = menuItem = gtk.ImageMenuItem(_("Duplicar Host"))
         menuItem.set_image(gtk.image_new_from_stock(gtk.STOCK_DND_MULTIPLE, gtk.ICON_SIZE_MENU))
         self.popupMenuFolder.append(menuItem)
-        menuItem.connect("activate", self.on_popupmenu, 'D')
+        menuItem.connect("activate", self.on_popup_menu, 'D')
         menuItem.show()
 
         menuItem = gtk.MenuItem()
@@ -330,39 +331,39 @@ class MainWindow:
         self.popupMenuTab.mnuRename = menuItem = gtk.ImageMenuItem(_("Renombrar consola"))
         menuItem.set_image(gtk.image_new_from_stock(gtk.STOCK_EDIT, gtk.ICON_SIZE_MENU))
         self.popupMenuTab.append(menuItem)
-        menuItem.connect("activate", self.on_popupmenu, 'R')
+        menuItem.connect("activate", self.on_popup_menu, 'R')
         menuItem.show()
 
         self.popupMenuTab.mnuReset = menuItem = gtk.ImageMenuItem(_("Reiniciar consola"))
         menuItem.set_image(gtk.image_new_from_stock(gtk.STOCK_NEW, gtk.ICON_SIZE_MENU))
         self.popupMenuTab.append(menuItem)
-        menuItem.connect("activate", self.on_popupmenu, 'RS')
+        menuItem.connect("activate", self.on_popup_menu, 'RS')
         menuItem.show()
 
         self.popupMenuTab.mnuClear = menuItem = gtk.ImageMenuItem(_("Reiniciar y Limpiar consola"))
         menuItem.set_image(gtk.image_new_from_stock(gtk.STOCK_CLEAR, gtk.ICON_SIZE_MENU))
         self.popupMenuTab.append(menuItem)
-        menuItem.connect("activate", self.on_popupmenu, 'RC')
+        menuItem.connect("activate", self.on_popup_menu, 'RC')
         menuItem.show()
 
         self.popupMenuTab.mnuReopen = menuItem = gtk.ImageMenuItem(_("Reconectar al host"))
         menuItem.set_image(gtk.image_new_from_stock(gtk.STOCK_CONNECT, gtk.ICON_SIZE_MENU))
         self.popupMenuTab.append(menuItem)
-        menuItem.connect("activate", self.on_popupmenu, 'RO')
+        menuItem.connect("activate", self.on_popup_menu, 'RO')
         # menuItem.show()
 
         self.popupMenuTab.mnuClone = menuItem = gtk.ImageMenuItem(_("Clonar consola"))
         menuItem.set_image(gtk.image_new_from_stock(gtk.STOCK_COPY, gtk.ICON_SIZE_MENU))
         self.popupMenuTab.append(menuItem)
-        menuItem.connect("activate", self.on_popupmenu, 'CC')
+        menuItem.connect("activate", self.on_popup_menu, 'CC')
         menuItem.show()
 
         self.popupMenuTab.mnuLog = menuItem = gtk.CheckMenuItem(_("Habilitar log"))
         self.popupMenuTab.append(menuItem)
-        menuItem.connect("activate", self.on_popupmenu, 'L')
+        menuItem.connect("activate", self.on_popup_menu, 'L')
         menuItem.show()
 
-    def on_popupmenu(self, widget, item, *args):
+    def on_popup_menu(self, widget, item, *args):
         if item == 'V':  # PASTE
             self.terminal_paste(self.popupMenu.terminal)
             return True
@@ -477,18 +478,46 @@ class MainWindow:
                 widget.set_active(False)
             return True
 
-    def populateCommandsMenu(self):
+    def populate_commands_menu(self):
         self.popupMenu.mnuCommands.foreach(lambda x: self.popupMenu.mnuCommands.remove(x))
         self.menuCustomCommands.foreach(lambda x: self.menuCustomCommands.remove(x))
         for x in self.conf.shortcuts:
             if type(self.conf.shortcuts[x]) != list:
                 menu_item = self.createMenuItem(x, self.conf.shortcuts[x][0:30])
                 self.popupMenu.mnuCommands.append(menu_item)
-                menu_item.connect("activate", self.on_popupmenu, 'CP', self.conf.shortcuts[x])
+                menu_item.connect("activate", self.on_popup_menu, 'CP', self.conf.shortcuts[x])
 
                 menu_item = self.createMenuItem(x, self.conf.shortcuts[x][0:30])
                 self.menuCustomCommands.append(menu_item)
-                menu_item.connect("activate", self.on_menuCustomCommands_activate, self.conf.shortcuts[x])
+                menu_item.connect("activate", self.on_menu_custom_commands_activate, self.conf.shortcuts[x])
+
+    def on_menu_custom_commands_activate(self, widget, command):
+        terminal = self.find_active_terminal(self.hpMain)
+        if terminal:
+            terminal.feed_child(command)
+
+    @staticmethod
+    def terminal_copy(terminal):
+        terminal.copy_clipboard()
+
+    @staticmethod
+    def terminal_paste(terminal):
+        terminal.paste_clipboard()
+
+    @staticmethod
+    def terminal_copy_paste(terminal):
+        terminal.copy_clipboard()
+        terminal.paste_clipboard()
+
+    @staticmethod
+    def terminal_select_all(terminal):
+        terminal.select_all()
+
+    @staticmethod
+    def terminal_copy_all(terminal):
+        terminal.select_all()
+        terminal.copy_clipboard()
+        terminal.select_none()
 
     def createMenuItem(self, shortcut, label):
         menuItem = gtk.MenuItem('')
