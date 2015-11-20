@@ -1,7 +1,6 @@
 import os
 import gtk
-import gobject
-
+from EntryDialog import EntryDialog
 
 def bindtextdomain(app_name, locale_dir=None):
     """
@@ -34,8 +33,33 @@ def bindtextdomain(app_name, locale_dir=None):
                 __builtins__["_"] = lambda x: x
 
 
-class Handler:
+def msgbox(text, icon, parent=None):
+    msgBox = gtk.MessageDialog(parent, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, text)
+    msgBox.set_icon_from_file(icon)
+    msgBox.run()
+    msgBox.destroy()
 
+
+def msgconfirm(text, icon):
+    msgBox = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_QUESTION, gtk.BUTTONS_OK_CANCEL, text)
+    msgBox.set_icon_from_file(icon)
+    response = msgBox.run()
+    msgBox.destroy()
+    return response
+
+
+def inputbox(title, text, icon, default='', password=False):
+    msgBox = EntryDialog(title, text, default, mask=password)
+    msgBox.set_icon_from_file(icon)
+    if msgBox.run() == gtk.RESPONSE_OK:
+        response = msgBox.value
+    else:
+        response = None
+    msgBox.destroy()
+    return response
+
+
+class Handler:
     def __init__(self, window):
         self.main = window
 
@@ -54,8 +78,11 @@ class Handler:
     def on_tvServers_button_press_event(self, *args):
         pass
 
-    def on_tvServers_row_activated(self, *args):
-        pass
+    def on_tvServers_row_activated(self, widget, *args):
+        if not self.main.treeModel.iter_has_child(widget.get_selection().get_selected()[1]):
+            selected = widget.get_selection().get_selected()[1]
+            host = self.main.treeModel.get_value(selected, 1)
+            self.main.addTab(self.main.nbConsole, host)
 
     def on_btnDonate_clicked(self, *args):
         pass
@@ -87,17 +114,64 @@ class Handler:
     def on_btnHSplit_clicked(self, *args):
         pass
 
-    def on_btnDel_clicked(self, *args):
-        pass
+    def on_btnDel_clicked(self, widget, *args):
+        if self.main.treeServers.get_selection().get_selected()[1] is not None:
+            if not self.main.treeModel.iter_has_child(self.main.treeServers.get_selection().get_selected()[1]):
+                #Eliminar solo el nodo
+                name = self.main.treeModel.get_value(self.main.treeServers.get_selection().get_selected()[1],0)
+                if msgconfirm("%s [%s]?" % (_("Confirma que desea eliminar el host"), name) ) == gtk.RESPONSE_OK:
+                    host = self.main.treeModel.get_value(self.main.treeServers.get_selection().get_selected()[1],1)
+                    self.conf.groups[host.group].remove(host)
+                    self.main.updateTree()
+            else:
+                #Eliminar todo el grupo
+                group = self.get_group(self.treeModel.iter_children(self.treeServers.get_selection().get_selected()[1]))
+                if msgconfirm("%s [%s]?" % (_("Confirma que desea eliminar todos los hosts del grupo"), group) ) == gtk.RESPONSE_OK:
+                    try:
+                        del self.main.groups[group]
+                    except:
+                        pass
+                    for h in dict(self.main.groups):
+                        if h.startswith(group+'/'):
+                            del self.main.groups[h]
+                    self.main.updateTree()
+        self.main.conf.writeConfig()
 
-    def on_bntEdit_clicked(self, *args):
-        pass
+    def on_btnEdit_clicked(self, widget, *args):
+        if self.main.treeServers.get_selection().get_selected()[1]is not None and not self.main.treeModel.iter_has_child(self.main.treeServers.get_selection().get_selected()[1]):
+            selected = self.main.treeServers.get_selection().get_selected()[1]
+            host = self.main.treeModel.get_value(selected,1)
+            self.main.init(host.group, host)
 
-    def on_btnAdd_clicked(self, *args):
-        pass
+    def on_btnAdd_clicked(self, widget, *args):
+        group=""
+        if self.main.treeServers.get_selection().get_selected()[1] is None:
+            selected = self.main.treeServers.get_selection().get_selected()[1]
+            group = self.main.get_group(selected)
+            if self.main.treeModel.iter_has_child(self.main.treeServers.get_selection().get_selected()[1]):
+                selected = self.main.treeServers.get_selection().get_selected()[1]
+                group = self.main.treeModel.get_value(selected,0)
+                parent_group = self.main.get_group(selected)
+                if parent_group != '':
+                    group = parent_group + '/' + group
+        self.main.init(group)
+        self.main.updateTree()
 
-    def on_btnConnect_clicked(self, *args):
-        pass
+    def on_btnConnect_clicked(self, widget, *args):
+        if self.main.treeServers.get_selection().get_selected()[1] is not None:
+            if not self.main.treeModel.iter_has_child(self.main.treeServers.get_selection().get_selected()[1]):
+                self.on_tvServers_row_activated(self.main.treeServers)
+            else:
+                selected = self.main.treeServers.get_selection().get_selected()[1]
+                group = self.main.treeModel.get_value(selected, 0)
+                parent_group = self.main.get_group(selected)
+                if parent_group != '':
+                    group = parent_group + '/' + group
+
+                for g in self.conf.groups:
+                    if g == group or g.startswith(group + '/'):
+                        for host in self.conf.groups[g]:
+                            self.main.addTab(self.main.nbConsole, host)
 
     def on_btnLocal_clicked(self, *args):
         pass
@@ -171,6 +245,5 @@ class Handler:
     def on_showToolbar_toggled(self, widget, *args):
         self.main.set_toolbar_visible(widget.get_active())
 
-    def on_showPanel_toggled (self, widget, *args):
+    def on_showPanel_toggled(self, widget, *args):
         self.main.set_panel_visible(widget.get_active())
-

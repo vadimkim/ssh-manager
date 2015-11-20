@@ -45,6 +45,7 @@ CONSOLE_CLOSE = ["console_close"]
 CONSOLE_RECONNECT = ["console_reconnect"]
 CONNECT = ["connect"]
 ERRMSG1 = "Entrada invalida en archivo de configuracion"
+ERRMSG2 = "Error al conectar con servidor"
 
 ICON_PATH = BASE_PATH + "/icon.png"
 
