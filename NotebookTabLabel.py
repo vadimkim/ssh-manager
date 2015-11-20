@@ -1,9 +1,11 @@
 import gtk
 import UiHelper
 
+
 class NotebookTabLabel(gtk.HBox):
-    '''Notebook tab label with close button.
-    '''
+    """Notebook tab label with close button.
+    """
+
     def __init__(self, title, owner_, widget_, popup_, conf):
         gtk.HBox.__init__(self, False, 0)
 
@@ -12,7 +14,7 @@ class NotebookTabLabel(gtk.HBox):
         self.owner = owner_
         self.eb = gtk.EventBox()
         label = self.label = gtk.Label()
-        self.eb.connect('button-press-event', self.popupmenu, label)
+        self.eb.connect('button-press-event', self.popup_menu, label)
         label.set_alignment(0.0, 0.5)
         label.set_text(title)
         self.eb.add(label)
@@ -21,14 +23,13 @@ class NotebookTabLabel(gtk.HBox):
         self.eb.show()
         close_image = gtk.image_new_from_stock(gtk.STOCK_CLOSE, gtk.ICON_SIZE_MENU)
         image_w, image_h = gtk.icon_size_lookup(gtk.ICON_SIZE_MENU)
-        self.widget=widget_
+        self.widget = widget_
         self.popup = popup_
         close_btn = gtk.Button()
         close_btn.set_relief(gtk.RELIEF_NONE)
         close_btn.connect('clicked', self.on_close_tab, owner_)
-        close_btn.set_size_request(image_w+7, image_h+6)
+        close_btn.set_size_request(image_w + 7, image_h + 6)
         close_btn.add(close_image)
-        style = close_btn.get_style();
         self.eb2 = gtk.EventBox()
         self.eb2.add(close_btn)
         self.pack_start(self.eb2, False, False)
@@ -51,14 +52,15 @@ class NotebookTabLabel(gtk.HBox):
         self.eb2.modify_bg(gtk.STATE_NORMAL, bg[gtk.STATE_NORMAL])
 
     def on_close_tab(self, widget, notebook, *args):
-        if self.conf.CONFIRM_ON_CLOSE_TAB and UiHelper.msgconfirm("%s [%s]?" % ( _("Cerrar consola"), self.label.get_text().strip()) ) != gtk.RESPONSE_OK:
+        if self.conf.CONFIRM_ON_CLOSE_TAB and UiHelper.msgconfirm(
+                        "%s [%s]?" % (_("Cerrar consola"), self.label.get_text().strip())) != gtk.RESPONSE_OK:
             return True
 
         self.close_tab(widget)
 
     def close_tab(self, widget):
         notebook = self.widget.get_parent()
-        page=notebook.page_num(self.widget)
+        page = notebook.page_num(self.widget)
         if page >= 0:
             notebook.is_closed = True
             notebook.remove_page(page)
@@ -70,7 +72,8 @@ class NotebookTabLabel(gtk.HBox):
         self.is_active = False
         if self.conf.AUTO_CLOSE_TAB != 0:
             if self.conf.AUTO_CLOSE_TAB == 2:
-                terminal = self.widget.get_parent().get_nth_page(self.widget.get_parent().page_num(self.widget)).get_child()
+                terminal = self.widget.get_parent().get_nth_page(
+                    self.widget.get_parent().page_num(self.widget)).get_child()
                 if terminal.get_child_exit_status() != 0:
                     return
             self.close_tab(self.widget)
@@ -82,7 +85,7 @@ class NotebookTabLabel(gtk.HBox):
     def get_text(self):
         return self.label.get_text()
 
-    def popupmenu(self, widget, event, label):
+    def popup_menu(self, widget, event, label):
         if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
             self.popup.label = self.label
             if self.is_active:
@@ -90,9 +93,10 @@ class NotebookTabLabel(gtk.HBox):
             else:
                 self.popup.mnuReopen.show()
 
-            #enable or disable log checkbox according to terminal
-            self.popup.mnuLog.set_active( hasattr(self.widget.get_child(), "log_handler_id") and self.widget.get_child().log_handler_id != 0 )
-            self.popup.popup( None, None, None, event.button, event.time)
+            # enable or disable log checkbox according to terminal
+            self.popup.mnuLog.set_active(
+                hasattr(self.widget.get_child(), "log_handler_id") and self.widget.get_child().log_handler_id != 0)
+            self.popup.popup(None, None, None, event.button, event.time)
             return True
         elif event.type == gtk.gdk.BUTTON_PRESS and event.button == 2:
             self.close_tab(self.widget)

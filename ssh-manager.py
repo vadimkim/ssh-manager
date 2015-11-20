@@ -61,6 +61,8 @@ class MainWindow:
         self.wMain = builder.get_object("wMain")
         self.hpMain = builder.get_object("hpMain")
         self.menuCustomCommands = builder.get_object("menuCustomCommands")
+        self.popupMenu = gtk.Menu()
+        self.popupMenuTab = gtk.Menu()
         self.builder = builder
 
     def init(self, group, host=None):
@@ -137,7 +139,7 @@ class MainWindow:
         self.update_texttags()
 
     def run(self):
-
+        # before window construction
         if self.conf.WINDOW_WIDTH != -1 and self.conf.WINDOW_HEIGHT != -1:
             self.wMain.resize(self.conf.WINDOW_WIDTH, self.conf.WINDOW_HEIGHT)
         else:
@@ -149,12 +151,21 @@ class MainWindow:
         self.set_toolbar_visible(self.conf.SHOW_TOOLBAR)
 
         self.init_left_pane()
-        self.createMenu()
+        self.create_menu()
         self.wMain.show_all()
+
         gtk.main()
 
-    def init_left_pane(self):
+        # after window construction
+        if self.conf.TRANSPARENCY>0:
+            # set top level window transparency
+            screen = self.wMain.get_screen()
+            colormap = screen.get_rgba_colormap()
+            if colormap is not None and screen.is_composited():
+                self.wMain.set_colormap(colormap)
+                self.real_transparency = True
 
+    def init_left_pane(self):
         self.treeServers.set_model(self.treeModel)
         self.treeServers.set_level_indentation(5)
 
@@ -182,8 +193,7 @@ class MainWindow:
         self.treeServers.connect('query-tooltip', self.on_tree_servers_tooltip)
         self.update_tree()
 
-    def createMenu(self):
-        self.popupMenu = gtk.Menu()
+    def create_menu(self):
         self.popupMenu.mnuCopy = menuItem = gtk.ImageMenuItem(_("Copiar"))
         menuItem.set_image(gtk.image_new_from_stock(gtk.STOCK_COPY, gtk.ICON_SIZE_MENU))
         self.popupMenu.append(menuItem)
@@ -272,7 +282,6 @@ class MainWindow:
         self.popupMenuFolder.mnuConnect = menuItem = gtk.ImageMenuItem(_("Conectar"))
         menuItem.set_image(gtk.image_new_from_stock(gtk.STOCK_EXECUTE, gtk.ICON_SIZE_MENU))
         self.popupMenuFolder.append(menuItem)
-        menuItem.connect("activate", Handler.on_btnConnect_clicked)
         menuItem.show()
 
         self.popupMenuFolder.mnuCopyAddress = menuItem = gtk.ImageMenuItem(_("Copiar Direccion"))
@@ -284,19 +293,16 @@ class MainWindow:
         self.popupMenuFolder.mnuAdd = menuItem = gtk.ImageMenuItem(_("Agregar Host"))
         menuItem.set_image(gtk.image_new_from_stock(gtk.STOCK_ADD, gtk.ICON_SIZE_MENU))
         self.popupMenuFolder.append(menuItem)
-        menuItem.connect("activate", Handler.on_btnAdd_clicked)
         menuItem.show()
 
         self.popupMenuFolder.mnuEdit = menuItem = gtk.ImageMenuItem(_("Editar"))
         menuItem.set_image(gtk.image_new_from_stock(gtk.STOCK_EDIT, gtk.ICON_SIZE_MENU))
         self.popupMenuFolder.append(menuItem)
-        menuItem.connect("activate", Handler.on_btnEdit_clicked)
         menuItem.show()
 
         self.popupMenuFolder.mnuDel = menuItem = gtk.ImageMenuItem(_("Eliminar"))
         menuItem.set_image(gtk.image_new_from_stock(gtk.STOCK_DELETE, gtk.ICON_SIZE_MENU))
         self.popupMenuFolder.append(menuItem)
-        menuItem.connect("activate", Handler.on_btnDel_clicked)
         menuItem.show()
 
         self.popupMenuFolder.mnuDup = menuItem = gtk.ImageMenuItem(_("Duplicar Host"))
@@ -320,7 +326,6 @@ class MainWindow:
         menuItem.show()
 
         # Menu contextual para tabs
-        self.popupMenuTab = gtk.Menu()
 
         self.popupMenuTab.mnuRename = menuItem = gtk.ImageMenuItem(_("Renombrar consola"))
         menuItem.set_image(gtk.image_new_from_stock(gtk.STOCK_EDIT, gtk.ICON_SIZE_MENU))
