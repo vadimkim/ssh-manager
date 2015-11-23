@@ -1,6 +1,8 @@
 import os
 import gtk
+import constants as const
 from EntryDialog import EntryDialog
+
 
 def bindtextdomain(app_name, locale_dir=None):
     """
@@ -20,8 +22,8 @@ def bindtextdomain(app_name, locale_dir=None):
     except (IOError, locale.Error), e:
         # force english as default locale
         try:
-            os.environ["LANGUAGE"] = "en_US.UTF-8"
-            locale.setlocale(locale.LC_ALL, "en_US.UTF-8")
+            os.environ['LANGUAGE'] = "en_US.UTF-8"
+            locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
             gtk.glade.bindtextdomain(app_name, locale_dir)
             gettext.install(app_name, locale_dir, unicode=1)
             return
@@ -33,22 +35,22 @@ def bindtextdomain(app_name, locale_dir=None):
                 __builtins__["_"] = lambda x: x
 
 
-def msgbox(text, icon, parent=None):
-    msgBox = gtk.MessageDialog(parent, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, text)
-    msgBox.set_icon_from_file(icon)
-    msgBox.run()
-    msgBox.destroy()
+def message_box(text, icon, parent=None):
+    msg_box = gtk.MessageDialog(parent, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, text)
+    msg_box.set_icon_from_file(icon)
+    msg_box.run()
+    msg_box.destroy()
 
 
-def msgconfirm(text, icon):
-    msgBox = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_QUESTION, gtk.BUTTONS_OK_CANCEL, text)
-    msgBox.set_icon_from_file(icon)
-    response = msgBox.run()
-    msgBox.destroy()
+def msg_confirm(text, icon):
+    msg_box = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_QUESTION, gtk.BUTTONS_OK_CANCEL, text)
+    msg_box.set_icon_from_file(icon)
+    response = msg_box.run()
+    msg_box.destroy()
     return response
 
 
-def inputbox(title, text, icon, default='', password=False):
+def input_box(title, text, icon, default='', password=False):
     msgBox = EntryDialog(title, text, default, mask=password)
     msgBox.set_icon_from_file(icon)
     if msgBox.run() == gtk.RESPONSE_OK:
@@ -64,10 +66,10 @@ class Handler:
         self.main = window
 
     def on_wMain_destroy(self, *args):
-        gtk.main_quit(*args)
+        gtk.mainquit()
 
     def on_wMain_delete_event(self, *args):
-        gtk.main_quit(*args)
+        gtk.mainquit()
 
     def on_hpMain_button_press_event(self, *args):
         pass
@@ -79,14 +81,14 @@ class Handler:
         if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
             x = int(event.x)
             y = int(event.y)
-            pthinfo = self.main.treeServers.get_path_at_pos(x, y)
-            if pthinfo is None:
+            path_info = self.main.treeServers.get_path_at_pos(x, y)
+            if path_info is None:
                 self.main.popupMenuFolder.mnuDel.hide()
                 self.main.popupMenuFolder.mnuEdit.hide()
                 self.main.popupMenuFolder.mnuCopyAddress.hide()
                 self.main.popupMenuFolder.mnuDup.hide()
             else:
-                path, col, cellx, celly = pthinfo
+                path, col, cell_x, cell_y = path_info
                 if self.main.treeModel.iter_children(self.main.treeModel.get_iter(path)):
                     self.main.popupMenuFolder.mnuEdit.hide()
                     self.main.popupMenuFolder.mnuCopyAddress.hide()
@@ -97,8 +99,8 @@ class Handler:
                     self.main.popupMenuFolder.mnuDup.show()
                 self.main.popupMenuFolder.mnuDel.show()
                 self.main.treeServers.grab_focus()
-                self.main.treeServers.set_cursor( path, col, 0)
-            self.main.popupMenuFolder.popup( None, None, None, event.button, event.time)
+                self.main.treeServers.set_cursor(path, col, 0)
+            self.main.popupMenuFolder.popup(None, None, None, event.button, event.time)
             return True
 
     def on_tvServers_row_activated(self, widget, *args):
@@ -137,50 +139,52 @@ class Handler:
     def on_btnHSplit_clicked(self, *args):
         pass
 
-    def on_btnDel_clicked(self, widget, *args):
+    def on_btn_del_clicked(self, widget, *args):
         if self.main.treeServers.get_selection().get_selected()[1] is not None:
             if not self.main.treeModel.iter_has_child(self.main.treeServers.get_selection().get_selected()[1]):
-                #Eliminar solo el nodo
-                name = self.main.treeModel.get_value(self.main.treeServers.get_selection().get_selected()[1],0)
-                if msgconfirm("%s [%s]?" % (_("Confirma que desea eliminar el host"), name) ) == gtk.RESPONSE_OK:
-                    host = self.main.treeModel.get_value(self.main.treeServers.get_selection().get_selected()[1],1)
+                # Eliminar solo el nodo
+                name = self.main.treeModel.get_value(self.main.treeServers.get_selection().get_selected()[1], 0)
+                if msg_confirm("%s [%s]?" % (const.LBLTXT1, name)) == gtk.RESPONSE_OK:
+                    host = self.main.treeModel.get_value(self.main.treeServers.get_selection().get_selected()[1], 1)
                     self.conf.groups[host.group].remove(host)
                     self.main.updateTree()
             else:
-                #Eliminar todo el grupo
-                group = self.get_group(self.treeModel.iter_children(self.treeServers.get_selection().get_selected()[1]))
-                if msgconfirm("%s [%s]?" % (_("Confirma que desea eliminar todos los hosts del grupo"), group) ) == gtk.RESPONSE_OK:
+                # Eliminar todo el grupo
+                group = self.get_group(self.treeModel.iter_children(self.main.treeServers.get_selection().get_selected()[1]))
+                if msg_confirm("%s [%s]?" % (const.LBLTXT2, group)) == gtk.RESPONSE_OK:
                     try:
                         del self.main.groups[group]
                     except:
                         pass
                     for h in dict(self.main.groups):
-                        if h.startswith(group+'/'):
+                        if h.startswith(group + '/'):
                             del self.main.groups[h]
                     self.main.updateTree()
         self.main.conf.writeConfig()
 
-    def on_btnEdit_clicked(self, widget, *args):
-        if self.main.treeServers.get_selection().get_selected()[1]is not None and not self.main.treeModel.iter_has_child(self.main.treeServers.get_selection().get_selected()[1]):
+    def on_btn_edit_clicked(self, widget, *args):
+        if self.main.treeServers.get_selection().get_selected()[
+            1] is not None and not self.main.treeModel.iter_has_child(
+                self.main.treeServers.get_selection().get_selected()[1]):
             selected = self.main.treeServers.get_selection().get_selected()[1]
-            host = self.main.treeModel.get_value(selected,1)
+            host = self.main.treeModel.get_value(selected, 1)
             self.main.init(host.group, host)
 
-    def on_btnAdd_clicked(self, widget, *args):
-        group=""
+    def on_btn_add_clicked(self, widget, *args):
+        group = ""
         if self.main.treeServers.get_selection().get_selected()[1] is None:
             selected = self.main.treeServers.get_selection().get_selected()[1]
             group = self.main.get_group(selected)
             if self.main.treeModel.iter_has_child(self.main.treeServers.get_selection().get_selected()[1]):
                 selected = self.main.treeServers.get_selection().get_selected()[1]
-                group = self.main.treeModel.get_value(selected,0)
+                group = self.main.treeModel.get_value(selected, 0)
                 parent_group = self.main.get_group(selected)
                 if parent_group != '':
                     group = parent_group + '/' + group
         self.main.init(group)
         self.main.updateTree()
 
-    def on_btnConnect_clicked(self, widget, *args):
+    def on_btn_connect_clicked(self, widget, *args):
         if self.main.treeServers.get_selection().get_selected()[1] is not None:
             if not self.main.treeModel.iter_has_child(self.main.treeServers.get_selection().get_selected()[1]):
                 self.on_tvServers_row_activated(self.main.treeServers)
@@ -262,11 +266,11 @@ class Handler:
     def on_wAbout_close(self, *args):
         pass
 
-    def on_menuFileQuit_activate(self, *args):
-        gtk.main_quit(*args)
+    def on_menu_file_quit_activate(self, menu_item):
+        gtk.mainquit()
 
-    def on_showToolbar_toggled(self, widget, *args):
+    def on_show_toolbar_toggled(self, widget, *args):
         self.main.set_toolbar_visible(widget.get_active())
 
-    def on_showPanel_toggled(self, widget, *args):
+    def on_show_panel_toggled(self, widget, *args):
         self.main.set_panel_visible(widget.get_active())

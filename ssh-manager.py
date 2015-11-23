@@ -78,8 +78,8 @@ class MainWindow:
         self.oldName = host.name
         self.txtDescription.set_text(host.description)
         self.txtHost.set_text(host.host)
-        i =  self.cmbType.get_model().get_iter_first()
-        while i!=None:
+        i = self.cmbType.get_model().get_iter_first()
+        while i != None:
             if (host.type == self.cmbType.get_model()[i][0]):
                 self.cmbType.set_active_iter(i)
                 break
@@ -90,32 +90,32 @@ class MainWindow:
         self.txtPrivateKey.set_text(host.private_key)
         self.txtPort.set_text(host.port)
         for t in host.tunnel:
-            if t!="":
+            if t != "":
                 tun = t.split(":")
                 tun.append(t)
-                self.treeModel.append(  tun )
+                self.treeModel.append(tun)
         self.txtCommands.set_sensitive(False)
         self.chkCommands.set_active(False)
-        if host.commands!='' and host.commands!=None:
+        if host.commands != '' and host.commands != None:
             self.txtCommands.get_buffer().set_text(host.commands)
             self.txtCommands.set_sensitive(True)
             self.chkCommands.set_active(True)
-        use_keep_alive = host.keep_alive!='' and host.keep_alive!='0' and host.keep_alive!=None
+        use_keep_alive = host.keep_alive != '' and host.keep_alive != '0' and host.keep_alive != None
         self.txtKeepAlive.set_sensitive(use_keep_alive)
         self.chkKeepAlive.set_active(use_keep_alive)
         self.txtKeepAlive.set_text(host.keep_alive)
-        if host.font_color!='' and host.font_color!=None and host.back_color!='' and host.back_color!=None:
+        if host.font_color != '' and host.font_color != None and host.back_color != '' and host.back_color != None:
             self.get_widget("chkDefaultColors").set_active(False)
             self.btnFColor.set_sensitive(True)
             self.btnBColor.set_sensitive(True)
-            fcolor=host.font_color
-            bcolor=host.back_color
+            fcolor = host.font_color
+            bcolor = host.back_color
         else:
             self.get_widget("chkDefaultColors").set_active(True)
             self.btnFColor.set_sensitive(False)
             self.btnBColor.set_sensitive(False)
-            fcolor="#FFFFFF"
-            bcolor="#000000"
+            fcolor = "#FFFFFF"
+            bcolor = "#000000"
 
         self.btnFColor.set_color(gtk.gdk.Color(fcolor))
         self.btnBColor.set_color(gtk.gdk.Color(bcolor))
@@ -127,8 +127,8 @@ class MainWindow:
         self.btnFColor.set_style(style)
         self.btnFColor.queue_draw()
 
-        self.btnFColor.selected_color=fcolor
-        self.btnBColor.selected_color=bcolor
+        self.btnFColor.selected_color = fcolor
+        self.btnBColor.selected_color = bcolor
         self.chkX11.set_active(host.x11)
         self.chkAgent.set_active(host.agent)
         self.chkCompression.set_active(host.compression)
@@ -140,7 +140,14 @@ class MainWindow:
         self.update_texttags()
 
     def run(self):
-        # before window construction
+        if self.conf.TRANSPARENCY > 0:
+            # set top level window transparency
+            screen = self.wMain.get_screen()
+            colormap = screen.get_rgba_colormap()
+            if colormap is not None and screen.is_composited():
+                self.wMain.set_colormap(colormap)
+                self.real_transparency = True
+
         if self.conf.WINDOW_WIDTH != -1 and self.conf.WINDOW_HEIGHT != -1:
             self.wMain.resize(self.conf.WINDOW_WIDTH, self.conf.WINDOW_HEIGHT)
         else:
@@ -156,15 +163,6 @@ class MainWindow:
         self.wMain.show_all()
 
         gtk.main()
-
-        # after window construction
-        if self.conf.TRANSPARENCY>0:
-            # set top level window transparency
-            screen = self.wMain.get_screen()
-            colormap = screen.get_rgba_colormap()
-            if colormap is not None and screen.is_composited():
-                self.wMain.set_colormap(colormap)
-                self.real_transparency = True
 
     def init_left_pane(self):
         self.treeServers.set_model(self.treeModel)
@@ -415,8 +413,8 @@ class MainWindow:
                 self.writeConfig()
             return True
         elif item == 'R':  # RENAME TAB
-            text = HostUtils.inputbox(_('Renombrar consola'), _('Ingrese nuevo nombre'), const.ICON_PATH,
-                            self.popupMenuTab.label.get_text().strip())
+            text = HostUtils.input_box(_('Renombrar consola'), _('Ingrese nuevo nombre'), const.ICON_PATH,
+                                       self.popupMenuTab.label.get_text().strip())
             if text != None and text != '':
                 self.popupMenuTab.label.set_text("  %s  " % (text))
             return True
@@ -730,7 +728,7 @@ class MainWindow:
             # guardar datos de consola para clonar consola
             v.host = host
         except:
-            UiHelper.msgbox("%s [%s]" % (const.ERRMSG2, sys.exc_info()[1]), const.ICON_PATH)
+            UiHelper.message_box("%s [%s]" % (const.ERRMSG2, sys.exc_info()[1]), const.ICON_PATH)
 
     def get_folder(self, obj, folder, path):
         if not obj:
@@ -781,7 +779,7 @@ class MainWindow:
     def get_group(self, i):
         if self.treeModel.iter_parent(i):
             p = self.get_group(self.treeModel.iter_parent(i))
-            return (p+'/' if p!='' else '') + self.treeModel.get_value(self.treeModel.iter_parent(i),0)
+            return (p + '/' if p != '' else '') + self.treeModel.get_value(self.treeModel.iter_parent(i), 0)
         else:
             return ''
 
@@ -795,16 +793,16 @@ class MainWindow:
                 widget.paste_clipboard()
             else:
                 self.popupMenu.mnuCopy.set_sensitive(widget.get_has_selection())
-                self.popupMenu.mnuLog.set_active( hasattr(widget, "log_handler_id") and widget.log_handler_id != 0 )
+                self.popupMenu.mnuLog.set_active(hasattr(widget, "log_handler_id") and widget.log_handler_id != 0)
                 self.popupMenu.terminal = widget
-                self.popupMenu.popup( None, None, None, event.button, event.time)
+                self.popupMenu.popup(None, None, None, event.button, event.time)
             return True
 
     def on_terminal_keypress(self, widget, event, *args):
         if self.conf.shortcuts.has_key(self.get_key_name(event)):
             cmd = self.conf.shortcuts[self.get_key_name(event)]
             if type(cmd) == list:
-                #comandos predefinidos
+                # comandos predefinidos
                 if cmd == const.COPY:
                     self.terminal_copy(widget)
                 elif cmd == const.PASTE:
@@ -820,7 +818,7 @@ class MainWindow:
                     if hasattr(self, 'search'):
                         self.find_word()
                 elif cmd == const.CLEAR:
-                   widget.reset(True, True)
+                    widget.reset(True, True)
                 elif cmd == const.FIND_BACK:
                     if hasattr(self, 'search'):
                         self.find_word(backwards=True)
@@ -842,18 +840,18 @@ class MainWindow:
                         while gtk.events_pending():
                             gtk.main_iteration(False)
 
-                        #esperar 2 seg antes de enviar el pass para dar tiempo a que se levante expect y prevenir que se muestre el pass
-                        if widget.command[2]!=None and widget.command[2]!='':
+                        # esperar 2 seg antes de enviar el pass para dar tiempo a que se levante expect y prevenir que se muestre el pass
+                        if widget.command[2] != None and widget.command[2] != '':
                             gobject.timeout_add(2000, self.send_data, widget, widget.command[2])
                     widget.get_parent().get_parent().get_tab_label(widget.get_parent()).mark_tab_as_active()
                     return True
                 elif cmd == const.CONNECT:
-                    Handler.on_btnConnect_clicked(None)
+                    Handler.on_btn_connect_clicked(None)
                 elif cmd[0][0:8] == "console_":
                     page = int(cmd[0][8:]) - 1
                     widget.get_parent().get_parent().set_current_page(page)
             else:
-                #comandos del usuario
+                # comandos del usuario
                 widget.feed_child(cmd)
             return True
         return False
@@ -887,16 +885,17 @@ class MainWindow:
             title = p.get_parent().get_tab_label(p).get_text().strip()
             prefix = "%s/%s-%s" % (os.path.expanduser(self.conf.LOG_PATH), title, time.strftime("%Y%m%d"))
             filename = ''
-            for i in range(1,1000):
-                if not os.path.exists("%s-%03i.log" % (prefix,i)):
-                    filename = "%s-%03i.log" % (prefix,i)
+            for i in range(1, 1000):
+                if not os.path.exists("%s-%03i.log" % (prefix, i)):
+                    filename = "%s-%03i.log" % (prefix, i)
                     break
-            filename == "%s-%03i.log" % (prefix,1)
+            filename == "%s-%03i.log" % (prefix, 1)
             try:
                 terminal.log = open(filename, 'w', 0)
-                terminal.log.write("Session '%s' opened at %s\n%s\n" % (title, time.strftime("%Y-%m-%d %H:%M:%S"), "-"*80))
+                terminal.log.write(
+                    "Session '%s' opened at %s\n%s\n" % (title, time.strftime("%Y-%m-%d %H:%M:%S"), "-" * 80))
             except:
-                UiHelper.msgbox("%s\n%s" % (_("No se puede abrir el archivo de log para escritura"), filename))
+                UiHelper.message_box("%s\n%s" % (_("No se puede abrir el archivo de log para escritura"), filename))
                 terminal.disconnect(terminal.log_handler_id)
                 del terminal.log_handler_id
                 return False

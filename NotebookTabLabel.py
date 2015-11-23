@@ -52,7 +52,7 @@ class NotebookTabLabel(gtk.HBox):
         self.eb2.modify_bg(gtk.STATE_NORMAL, bg[gtk.STATE_NORMAL])
 
     def on_close_tab(self, widget, notebook, *args):
-        if self.conf.CONFIRM_ON_CLOSE_TAB and UiHelper.msgconfirm(
+        if self.conf.CONFIRM_ON_CLOSE_TAB and UiHelper.msg_confirm(
                         "%s [%s]?" % (_("Cerrar consola"), self.label.get_text().strip())) != gtk.RESPONSE_OK:
             return True
 
