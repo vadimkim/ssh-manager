@@ -144,14 +144,14 @@ class Handler:
             if not self.main.treeModel.iter_has_child(self.main.treeServers.get_selection().get_selected()[1]):
                 # Eliminar solo el nodo
                 name = self.main.treeModel.get_value(self.main.treeServers.get_selection().get_selected()[1], 0)
-                if msg_confirm("%s [%s]?" % (const.LBLTXT1, name)) == gtk.RESPONSE_OK:
+                if msg_confirm("%s [%s]?" % (const.LABEL_TXT1, name)) == gtk.RESPONSE_OK:
                     host = self.main.treeModel.get_value(self.main.treeServers.get_selection().get_selected()[1], 1)
-                    self.conf.groups[host.group].remove(host)
+                    self.main.conf.groups[host.group].remove(host)
                     self.main.updateTree()
             else:
                 # Eliminar todo el grupo
                 group = self.get_group(self.treeModel.iter_children(self.main.treeServers.get_selection().get_selected()[1]))
-                if msg_confirm("%s [%s]?" % (const.LBLTXT2, group)) == gtk.RESPONSE_OK:
+                if msg_confirm("%s [%s]?" % (const.LABEL_TXT2, group)) == gtk.RESPONSE_OK:
                     try:
                         del self.main.groups[group]
                     except:
@@ -184,7 +184,7 @@ class Handler:
         self.main.init(group)
         self.main.updateTree()
 
-    def on_btn_connect_clicked(self, widget, *args):
+    def on_btn_connect_clicked(self, widget):
         if self.main.treeServers.get_selection().get_selected()[1] is not None:
             if not self.main.treeModel.iter_has_child(self.main.treeServers.get_selection().get_selected()[1]):
                 self.on_tvServers_row_activated(self.main.treeServers)
@@ -195,9 +195,9 @@ class Handler:
                 if parent_group != '':
                     group = parent_group + '/' + group
 
-                for g in self.conf.groups:
+                for g in self.main.conf.groups:
                     if g == group or g.startswith(group + '/'):
-                        for host in self.conf.groups[g]:
+                        for host in self.main.conf.groups[g]:
                             self.main.addTab(self.main.nbConsole, host)
 
     def on_btnLocal_clicked(self, *args):

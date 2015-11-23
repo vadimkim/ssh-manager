@@ -47,8 +47,9 @@ CONNECT = ["connect"]
 ERRMSG1 = "Entrada invalida en archivo de configuracion"
 ERRMSG2 = "Error al conectar con servidor"
 
-LBLTXT1 = "Confirma que desea eliminar el host"
-LBLTXT2 = "Confirma que desea eliminar todos los hosts del grupo"
+LABEL_TXT1 = "Confirma que desea eliminar el host"
+LABEL_TXT2 = "Confirma que desea eliminar todos los hosts del grupo"
+
 
 ICON_PATH = BASE_PATH + "/icon.png"
 
