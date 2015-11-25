@@ -35,9 +35,9 @@ class Conf:
     groups = {}
 
     def __init__(self):
-        self.loadConfig()
+        self.load_config()
 
-    def loadConfig(self):
+    def load_config(self):
         global groups
         cp = ConfigParser.RawConfigParser()
         cp.read(const.CONFIG_FILE)
@@ -136,6 +136,15 @@ class Conf:
                 scuts[cp.get("shortcuts", "console_%d" % x)] = eval("const.CONSOLE_%d" % x)
             except NoOptionError:
                 scuts["F%d" % x] = eval("CONSOLE_%d" % x)
+
+        # shortcuts for custom commands
+        try:
+            i = 1
+            while True:
+                scuts[cp.get("shortcuts", "shortcut%d" % i)] = cp.get("shortcuts", "command%d" % i).replace('\\n', '\n')
+                i += 1
+        except NoOptionError:
+            pass
 
         self.shortcuts = scuts
 

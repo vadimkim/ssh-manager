@@ -270,7 +270,7 @@ class MainWindow:
         self.popupMenu.append(menu_item)
         menu_item.show()
 
-        # Menu de comandos personalizados
+        # Custom commands menu
         self.popupMenu.mnuCommands = gtk.Menu()
 
         self.popupMenu.mnuCmds = menu_item = gtk.ImageMenuItem(_("Comandos personalizados"))
@@ -279,7 +279,7 @@ class MainWindow:
         menu_item.show()
         self.populate_commands_menu()
 
-        # Menu contextual para panel de servidores
+        # Context menu for server panel
         self.popupMenuFolder.mnuConnect = menu_item = gtk.ImageMenuItem(_("Conectar"))
         menu_item.set_image(gtk.image_new_from_stock(gtk.STOCK_EXECUTE, gtk.ICON_SIZE_MENU))
         self.popupMenuFolder.append(menu_item)
@@ -436,7 +436,7 @@ class MainWindow:
                 term = self.popupMenu.terminal
             term.reset(True, True)
             return True
-        elif item == 'RO':  # REOPEN SESION
+        elif item == 'RO':  # REOPEN SESSION
             tab = self.popupMenuTab.label.get_parent().get_parent()
             term = tab.widget.get_child()
             if not hasattr(term, "command"):
@@ -446,7 +446,7 @@ class MainWindow:
                 while gtk.events_pending():
                     gtk.main_iteration(False)
 
-                # esperar 2 seg antes de enviar el pass para dar tiempo a que se levante expect y prevenir que se muestre el pass
+                # wait 2 seconds to hide password before sending command to expect
                 if term.command[2] is not None and term.command[2] != '':
                     gobject.timeout_add(2000, self.send_data, term, term.command[2])
             tab.mark_tab_as_active()
@@ -461,12 +461,12 @@ class MainWindow:
                 ntbk = term.get_parent().get_parent()
                 tab = ntbk.get_tab_label(term.get_parent())
             if not hasattr(term, "host"):
-                self.addTab(ntbk, tab.get_text())
+                self.add_tab(ntbk, tab.get_text())
             else:
                 host = term.host.clone()
                 host.name = tab.get_text()
                 host.log = hasattr(term, "log_handler_id") and term.log_handler_id != 0
-                self.addTab(ntbk, host)
+                self.add_tab(ntbk, host)
             return True
         elif item == 'L' or item == 'L2':  # ENABLE/DISABLE LOG
             if item == 'L':
@@ -583,12 +583,12 @@ class MainWindow:
                 menu_item = gtk.ImageMenuItem(host.name)
                 menu_item.set_image(gtk.image_new_from_stock(gtk.STOCK_NETWORK, gtk.ICON_SIZE_MENU))
                 menu_item.show()
-                menu_item.connect("activate", lambda arg, nb, h: self.addTab(nb, h), self.nbConsole, host)
+                menu_item.connect("activate", lambda arg, nb, h: self.add_tab(nb, h), self.nbConsole, host)
                 menu_node.append(menu_item)
 
         self.set_collapsed_nodes()
 
-    def addTab(self, notebook, host):
+    def add_tab(self, notebook, host):
         try:
             v = vte.Terminal()
             v.set_word_chars(self.conf.WORD_SEPARATORS)
@@ -599,14 +599,14 @@ class MainWindow:
             if isinstance(host, basestring):
                 host = Host('', host)
 
-            fcolor = host.font_color
-            bcolor = host.back_color
-            if fcolor == '' or fcolor == None or bcolor == '' or bcolor == None:
-                fcolor = self.conf.FONT_COLOR
-                bcolor = self.conf.BACK_COLOR
+            font_color = host.font_color
+            background_color = host.back_color
+            if font_color == '' or font_color is None or background_color == '' or background_color is None:
+                font_color = self.conf.FONT_COLOR
+                background_color = self.conf.BACK_COLOR
 
-            if len(fcolor) > 0 and len(bcolor) > 0:
-                v.set_colors(gtk.gdk.Color(fcolor), gtk.gdk.Color(bcolor), [])
+            if len(font_color) > 0 and len(background_color) > 0:
+                v.set_colors(gtk.gdk.Color(font_color), gtk.gdk.Color(background_color), [])
 
             if len(self.conf.FONT) == 0:
                 self.conf.FONT = 'monospace'
@@ -628,8 +628,8 @@ class MainWindow:
                 if not self.real_transparency:
                     v.set_background_transparent(True)
                     v.set_background_saturation(self.conf.TRANSPARENCY / 100.0)
-                    if len(bcolor) > 0:
-                        v.set_background_tint_color(gtk.gdk.Color(bcolor))
+                    if len(background_color) > 0:
+                        v.set_background_tint_color(gtk.gdk.Color(background_color))
                 else:
                     v.set_opacity(int((100 - self.conf.TRANSPARENCY) / 100.0 * 65535))
 
@@ -687,10 +687,10 @@ class MainWindow:
                         if host.compressionLevel != '':
                             args.append('-o')
                             args.append('CompressionLevel=%s' % (host.compressionLevel))
-                    if host.private_key != None and host.private_key != '':
+                    if host.private_key is not None and host.private_key != '':
                         args.append("-i")
                         args.append(host.private_key)
-                    if host.extra_params != None and host.extra_params != '':
+                    if host.extra_params is not None and host.extra_params != '':
                         args += host.extra_params.split()
                     args.append(host.host)
                 else:
@@ -700,7 +700,7 @@ class MainWindow:
                         args = [const.TEL_BIN]
                     else:
                         args = [const.SSH_COMMAND, host.type, '-l', host.user]
-                    if host.extra_params != None and host.extra_params != '':
+                    if host.extra_params is not None and host.extra_params != '':
                         args += host.extra_params.split()
                     args += [host.host, host.port]
                 v.command = (cmd, args, password)
@@ -708,8 +708,8 @@ class MainWindow:
                 while gtk.events_pending():
                     gtk.main_iteration(False)
 
-                # esperar 2 seg antes de enviar el pass para dar tiempo a que se levante expect y prevenir que se muestre el pass
-                if password != None and password != '':
+                # wait 2 seconds to hide password before sending command to expect
+                if password is not None and password != '':
                     gobject.timeout_add(2000, self.send_data, v, password)
 
             # esperar 3 seg antes de enviar comandos
@@ -805,7 +805,7 @@ class MainWindow:
         if self.conf.shortcuts.has_key(self.get_key_name(event)):
             cmd = self.conf.shortcuts[self.get_key_name(event)]
             if type(cmd) == list:
-                # comandos predefinidos
+                # pre-defined commands
                 if cmd == const.COPY:
                     self.terminal_copy(widget)
                 elif cmd == const.PASTE:
@@ -843,18 +843,18 @@ class MainWindow:
                         while gtk.events_pending():
                             gtk.main_iteration(False)
 
-                        # esperar 2 seg antes de enviar el pass para dar tiempo a que se levante expect y prevenir que se muestre el pass
+                        # wait 2 seconds to hide password before sending command to expect
                         if widget.command[2] is not None and widget.command[2] != '':
                             gobject.timeout_add(2000, self.send_data, widget, widget.command[2])
                     widget.get_parent().get_parent().get_tab_label(widget.get_parent()).mark_tab_as_active()
                     return True
                 elif cmd == const.CONNECT:
-                    Handler.on_btn_connect_clicked(None)  # TODO check what is it ?
+                    self.builder.get_object("btnConnect").emit("clicked")
                 elif cmd[0][0:8] == "console_":
                     page = int(cmd[0][8:]) - 1
                     widget.get_parent().get_parent().set_current_page(page)
             else:
-                # comandos del usuario
+                # user commands
                 widget.feed_child(cmd)
             return True
         return False
@@ -893,7 +893,7 @@ class MainWindow:
                 if not os.path.exists("%s-%03i.log" % (prefix, i)):
                     filename = "%s-%03i.log" % (prefix, i)
                     break
-            filename == "%s-%03i.log" % (prefix, 1)
+            filename = "%s-%03i.log" % (prefix, 1)
             try:
                 terminal.log = open(filename, 'w', 0)
                 terminal.log.write(
@@ -976,9 +976,10 @@ class MainWindow:
 
     @staticmethod
     def on_contents_changed(terminal):
-        col,row = terminal.get_cursor_position()
+        col, row = terminal.get_cursor_position()
         if terminal.last_logged_row != row:
-            text = terminal.get_text_range(terminal.last_logged_row, terminal.last_logged_col, row, col, lambda *args: True, None, None)
+            text = terminal.get_text_range(terminal.last_logged_row, terminal.last_logged_col, row, col,
+                                           lambda *args: True, None, None)
             terminal.last_logged_row = row
             terminal.last_logged_col = col
             terminal.log.write(text[:-1])

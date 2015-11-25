@@ -28,7 +28,7 @@ def bindtextdomain(app_name, locale_dir=None):
             gettext.install(app_name, locale_dir, unicode=1)
             return
         except:
-            # english didnt work, just use spanish
+            # if english didn't work use spanish
             try:
                 __builtins__.__dict__["_"] = lambda x: x
             except:
@@ -107,7 +107,7 @@ class Handler:
         if not self.main.treeModel.iter_has_child(widget.get_selection().get_selected()[1]):
             selected = widget.get_selection().get_selected()[1]
             host = self.main.treeModel.get_value(selected, 1)
-            self.main.addTab(self.main.nbConsole, host)
+            self.main.add_tab(self.main.nbConsole, host)
 
     def on_btnDonate_clicked(self, *args):
         pass
@@ -198,7 +198,7 @@ class Handler:
                 for g in self.main.conf.groups:
                     if g == group or g.startswith(group + '/'):
                         for host in self.main.conf.groups[g]:
-                            self.main.addTab(self.main.nbConsole, host)
+                            self.main.add_tab(self.main.nbConsole, host)
 
     def on_btnLocal_clicked(self, *args):
         pass
