@@ -1,6 +1,7 @@
 import os
 import gtk
 import constants as const
+from Whost import Whost
 from EntryDialog import EntryDialog
 
 
@@ -35,7 +36,7 @@ def bindtextdomain(app_name, locale_dir=None):
                 __builtins__["_"] = lambda x: x
 
 
-def message_box(text, icon, parent=None):
+def message_box(text, icon=const.ICON_PATH, parent=None):
     msg_box = gtk.MessageDialog(parent, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, text)
     msg_box.set_icon_from_file(icon)
     msg_box.run()
@@ -51,14 +52,33 @@ def msg_confirm(text, icon):
 
 
 def input_box(title, text, icon, default='', password=False):
-    msgBox = EntryDialog(title, text, default, mask=password)
-    msgBox.set_icon_from_file(icon)
-    if msgBox.run() == gtk.RESPONSE_OK:
-        response = msgBox.value
+    msg_box = EntryDialog(title, text, default, mask=password)
+    msg_box.set_icon_from_file(icon)
+    if msg_box.run() == gtk.RESPONSE_OK:
+        response = msg_box.value
     else:
         response = None
-    msgBox.destroy()
+    msg_box.destroy()
     return response
+
+
+def show_open_dialog(parent, title, action):
+    dlg = gtk.FileChooserDialog(title=title, parent=parent, action=action)
+    dlg.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
+
+    dlg.add_button(gtk.STOCK_SAVE if action==gtk.FILE_CHOOSER_ACTION_SAVE else gtk.STOCK_OPEN, gtk.RESPONSE_OK)
+    dlg.set_do_overwrite_confirmation(True)
+    if not hasattr(parent,'lastPath'):
+        parent.lastPath = os.path.expanduser("~")
+    dlg.set_current_folder( parent.lastPath )
+
+    if dlg.run() == gtk.RESPONSE_OK:
+        filename = dlg.get_filename()
+        parent.lastPath = os.path.dirname(filename)
+    else:
+        filename = None
+    dlg.destroy()
+    return filename
 
 
 class Handler:
@@ -147,7 +167,7 @@ class Handler:
                 if msg_confirm("%s [%s]?" % (const.LABEL_TXT1, name)) == gtk.RESPONSE_OK:
                     host = self.main.treeModel.get_value(self.main.treeServers.get_selection().get_selected()[1], 1)
                     self.main.conf.groups[host.group].remove(host)
-                    self.main.updateTree()
+                    self.main.update_tree()
             else:
                 # Eliminar todo el grupo
                 group = self.get_group(self.treeModel.iter_children(self.main.treeServers.get_selection().get_selected()[1]))
@@ -159,8 +179,8 @@ class Handler:
                     for h in dict(self.main.groups):
                         if h.startswith(group + '/'):
                             del self.main.groups[h]
-                    self.main.updateTree()
-        self.main.conf.writeConfig()
+                    self.main.update_tree()
+        self.main.conf.write_config()
 
     def on_btn_edit_clicked(self, widget, *args):
         if self.main.treeServers.get_selection().get_selected()[
@@ -172,7 +192,7 @@ class Handler:
 
     def on_btn_add_clicked(self, widget, *args):
         group = ""
-        if self.main.treeServers.get_selection().get_selected()[1] is None:
+        if self.main.treeServers.get_selection().get_selected()[1] is not None:
             selected = self.main.treeServers.get_selection().get_selected()[1]
             group = self.main.get_group(selected)
             if self.main.treeModel.iter_has_child(self.main.treeServers.get_selection().get_selected()[1]):
@@ -181,8 +201,9 @@ class Handler:
                 parent_group = self.main.get_group(selected)
                 if parent_group != '':
                     group = parent_group + '/' + group
-        self.main.init(group)
-        self.main.updateTree()
+        window_host = Whost(self.main)
+        window_host.init(group)
+        # self.main.update_tree()       TODO not relevant ?
 
     def on_btn_connect_clicked(self, widget):
         if self.main.treeServers.get_selection().get_selected()[1] is not None:
@@ -233,8 +254,14 @@ class Handler:
     def on_okbutton1_clicked(self, *args):
         pass
 
-    def on_cancelbutton1_clicked(self, *args):
-        pass
+    def on_cancelbutton1_clicked(self, widget, *args):
+        top_level = widget.get_toplevel()
+        top_level.destroy()
+
+    # TODO remove this event after correct dialog init to see if close signal call destroy() automatically
+    def on_wHost_response (self, widget, event):
+        if event == -4:
+            widget.destroy()
 
     def on_treeCommands_key_press_event(self, *args):
         pass

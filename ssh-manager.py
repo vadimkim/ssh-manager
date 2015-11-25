@@ -8,7 +8,6 @@ import sys
 import time
 import pango
 import UiHelper
-from UiHelper import Handler
 from Configuration import Conf
 from HostUtils import Host
 from HostUtils import HostUtils
@@ -49,6 +48,7 @@ UiHelper.bindtextdomain(const.domain_name, const.locale_dir)
 class MainWindow:
     def __init__(self):
         self.conf = Conf()
+        self.current = None
         self.real_transparency = False
         builder = gtk.Builder()
         builder.set_translation_domain(const.domain_name)
@@ -62,6 +62,7 @@ class MainWindow:
         self.hpMain = builder.get_object("hpMain")
         self.menuCustomCommands = builder.get_object("menuCustomCommands")
         self.txtSearch = builder.get_object("txtSearch")
+
         self.popupMenu = gtk.Menu()
         self.popupMenuTab = gtk.Menu()
         self.popupMenuFolder = gtk.Menu()
@@ -411,8 +412,10 @@ class MainWindow:
                         new_name = '%s (copy)' % new_name
                 new_host.name = new_name
                 self.conf.groups[group].append(new_host)
-                self.wMain.updateTree()
-                self.wMain.writeConfig()
+                self.update_tree()
+                self.conf.COLLAPSED_FOLDERS = ','.join(
+                    self.get_collapsed_nodes())  # TODO collapsed_nodes implementation
+                self.conf.write_config()  # TODO check if write is necessary
             return True
         elif item == 'R':  # RENAME TAB
             text = UiHelper.input_box(_('Renombrar consola'), _('Ingrese nuevo nombre'), const.ICON_PATH,
@@ -479,8 +482,8 @@ class MainWindow:
             return True
 
     def populate_commands_menu(self):
-        self.popupMenu.mnuCommands.foreach(lambda x: self.popupMenu.mnuCommands.remove(x))
-        self.menuCustomCommands.foreach(lambda x: self.menuCustomCommands.remove(x))
+        self.popupMenu.mnuCommands.foreach(lambda w: self.popupMenu.mnuCommands.remove(w))
+        self.menuCustomCommands.foreach(lambda w: self.menuCustomCommands.remove(w))
         for x in self.conf.shortcuts:
             if type(self.conf.shortcuts[x]) != list:
                 menu_item = self.create_menu_item(x, self.conf.shortcuts[x][0:30])
@@ -616,7 +619,7 @@ class MainWindow:
             scrollPane = gtk.ScrolledWindow()
             scrollPane.connect('button_press_event', lambda *args: True)
             scrollPane.set_property('hscrollbar-policy', gtk.POLICY_NEVER)
-            tab = NotebookTabLabel("  %s  " % (host.name), self.nbConsole, scrollPane, self.popupMenuTab, self.conf)
+            tab = NotebookTabLabel("  %s  " % host.name, self.nbConsole, scrollPane, self.popupMenuTab, self.conf)
 
             v.connect("child-exited", lambda widget: tab.mark_tab_as_closed())
             v.connect('focus', self.on_tab_focus)
@@ -654,7 +657,7 @@ class MainWindow:
             while gtk.events_pending():
                 gtk.main_iteration(False)
 
-            if host.host == '' or host.host == None:
+            if host.host == '' or host.host is None:
                 v.fork_command(const.SHELL)
             else:
                 cmd = const.SSH_COMMAND
@@ -669,7 +672,7 @@ class MainWindow:
                         args = [const.SSH_COMMAND, host.type, '-l', host.user, '-p', host.port]
                     if host.keep_alive != '0' and host.keep_alive != '':
                         args.append('-o')
-                        args.append('ServerAliveInterval=%s' % (host.keep_alive))
+                        args.append('ServerAliveInterval=%s' % host.keep_alive)
                     for t in host.tunnel:
                         if t != "":
                             if t.endswith(":*:*"):
@@ -686,7 +689,7 @@ class MainWindow:
                         args.append("-C")
                         if host.compressionLevel != '':
                             args.append('-o')
-                            args.append('CompressionLevel=%s' % (host.compressionLevel))
+                            args.append('CompressionLevel=%s' % host.compressionLevel)
                     if host.private_key is not None and host.private_key != '':
                         args.append("-i")
                         args.append(host.private_key)
@@ -713,7 +716,7 @@ class MainWindow:
                     gobject.timeout_add(2000, self.send_data, v, password)
 
             # esperar 3 seg antes de enviar comandos
-            if host.commands != None and host.commands != '':
+            if host.commands is not None and host.commands != '':
                 basetime = 700 if len(host.host) == 0 else 3000
                 lines = []
                 for line in host.commands.splitlines():
@@ -790,7 +793,7 @@ class MainWindow:
         if isinstance(widget, vte.Terminal):
             self.current = widget
 
-    def on_terminal_click(self, widget, event, *args):
+    def on_terminal_click(self, widget, event):
         if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
             if self.conf.PASTE_ON_RIGHT_CLICK:
                 widget.paste_clipboard()
@@ -941,7 +944,7 @@ class MainWindow:
                 f = open(filename, "w")
                 f.write(buff)
                 f.close()
-            except:
+            except IOError:
                 dlg.destroy()
                 UiHelper.message_box("%s: %s" % (_("No se puede abrir archivo para escritura"), filename),
                                      const.ICON_PATH)

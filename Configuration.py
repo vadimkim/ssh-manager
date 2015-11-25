@@ -8,7 +8,6 @@ from HostUtils import HostUtils
 
 # Configuration variables
 class Conf:
-
     WORD_SEPARATORS = "-A-Za-z0-9,./?%&#:_=+@~"
     BUFFER_LINES = 2000
     STARTUP_LOCAL = True
@@ -151,3 +150,56 @@ class Conf:
         # create hosts list
         hu = HostUtils()
         self.groups = hu.load_hosts(cp, version=self.VERSION)
+
+    def write_config(self):
+        cp = ConfigParser.RawConfigParser()
+        cp.read(const.CONFIG_FILE + ".tmp")
+
+        cp.add_section("options")
+        cp.set("options", "word-separators", self.WORD_SEPARATORS)
+        cp.set("options", "buffer-lines", self.BUFFER_LINES)
+        cp.set("options", "startup-local", self.STARTUP_LOCAL)
+        cp.set("options", "confirm-exit", self.CONFIRM_ON_EXIT)
+        cp.set("options", "font-color", self.FONT_COLOR)
+        cp.set("options", "back-color", self.BACK_COLOR)
+        cp.set("options", "transparency", self.TRANSPARENCY)
+        cp.set("options", "paste-right-click", self.PASTE_ON_RIGHT_CLICK)
+        cp.set("options", "confirm-close-tab", self.CONFIRM_ON_CLOSE_TAB)
+        cp.set("options", "check-updates", self.CHECK_UPDATES)
+        cp.set("options", "font", self.FONT)
+        cp.set("options", "donate", self.HIDE_DONATE)
+        cp.set("options", "auto-copy-selection", self.AUTO_COPY_SELECTION)
+        cp.set("options", "log-path", self.LOG_PATH)
+        cp.set("options", "version", const.app_file_version)
+        cp.set("options", "auto-close-tab", self.AUTO_CLOSE_TAB)
+
+        cp.add_section("window")
+        cp.set("window", "collapsed-folders", self.COLLAPSED_FOLDERS)
+        cp.set("window", "left-panel-width", self.LEFT_PANEL_WIDTH)
+        cp.set("window", "window-width", self.WINDOW_WIDTH)
+        cp.set("window", "window-height", self.WINDOW_HEIGHT)
+        cp.set("window", "show-panel", self.SHOW_PANEL)
+        cp.set("window", "show-toolbar", self.SHOW_TOOLBAR)
+
+        i = 1
+        for group in self.groups:
+            for host in groups[group]:
+                section = "host " + str(i)
+                cp.add_section(section)
+                HostUtils.save_host_to_ini(cp, section, host)
+                i += 1
+
+        cp.add_section("shortcuts")
+        i = 1
+        for s in self.shortcuts:
+            if type(self.shortcuts[s]) == list:
+                cp.set("shortcuts", self.shortcuts[s][0], s)
+            else:
+                cp.set("shortcuts", "shortcut%d" % i, s)
+                cp.set("shortcuts", "command%d" % i, self.shortcuts[s].replace('\n', '\\n'))
+                i += 1
+
+        f = open(const.CONFIG_FILE + ".tmp", "w")
+        cp.write(f)
+        f.close()
+        os.rename(const.CONFIG_FILE + ".tmp", const.CONFIG_FILE)

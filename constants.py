@@ -4,7 +4,7 @@ import sys
 pp_name = "SSH connection manager"
 app_version = "1.0"
 app_web = "https://github.com/vadimkim/ssh-manager"
-app_fileversion = "1"
+app_file_version = "1"
 
 BASE_PATH = os.path.dirname(os.path.abspath(sys.argv[0]))
 

@@ -35,7 +35,7 @@ class EntryDialog(gtk.Dialog):
         button.set_flags(gtk.CAN_DEFAULT)
         self.action_area.pack_start(button)
         button.show()
-        self.ret = None
+        #self.ret = None
 
     def quit(self, w=None, event=None):
         self.hide()
